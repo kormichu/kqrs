@@ -1,0 +1,9 @@
+tasks.register('setupGitHooks', Copy) {
+    from new File(rootProject.rootDir, 'gradle/config/git/pre-commit')
+    into { new File(rootProject.rootDir, '.git/hooks') }
+    filePermissions {
+        unix(0700)
+    }
+}
+
+project.build.dependsOn setupGitHooks

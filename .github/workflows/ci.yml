@@ -1,0 +1,47 @@
+name: Build and run tests (CI)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'main'
+      - 'dev'
+    tags:
+      - 'v*.*.*'
+  pull_request:
+    branches:
+      - 'main'
+      - 'dev'
+
+concurrency:
+  group: ${{ github.workflow}}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head.ref }}
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Test with Gradle
+        run: ./gradlew clean check --scan --profile -i -Penvironment=integration
+
+      - name: Upload Gradle reports
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-reports
+          path: build/reports/
+          retention-days: 1
