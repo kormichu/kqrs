@@ -5,11 +5,14 @@ plugins {
 dependencies {
     api(libs.kotlin.reflect)
     api(libs.slf4j.api)
-    api(libs.micrometer.core)
     api(libs.uuid.creator)
+    api(libs.kotlinx.coroutines.core)
+    api(libs.kotlinx.coroutines.slf4j)
 
+    testImplementation(libs.junit.jupiter)
     testImplementation(libs.mockk)
     testImplementation(libs.assertk.jvm)
+    testImplementation(libs.kotlinx.coroutines.test)
 }
 
 java {

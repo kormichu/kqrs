@@ -1,4 +1,4 @@
-package com.kormichu.kqrs.prometheus
+package com.kormichu.kqrs.metrics.prometheus
 
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag

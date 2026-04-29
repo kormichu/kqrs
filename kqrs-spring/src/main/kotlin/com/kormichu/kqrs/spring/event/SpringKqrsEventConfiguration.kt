@@ -1,6 +1,6 @@
 package com.kormichu.kqrs.spring.event
 
-import com.kormichu.kqrs.coroutines.CoroutineDispatchers
+import com.kormichu.kqrs.AsyncDispatchers
 import com.kormichu.kqrs.event.DefaultEventBus
 import com.kormichu.kqrs.event.DefaultEventExecutor
 import com.kormichu.kqrs.event.EventBus
@@ -38,7 +38,7 @@ class SpringKqrsEventConfiguration {
     @Bean
     @ConditionalOnMissingBean(EventExecutor::class)
     fun kqrsEventExecutor(
-        coroutineDispatchers: CoroutineDispatchers,
+        coroutineDispatchers: AsyncDispatchers,
         cqrsProperties: SpringKqrsProperties,
     ): EventExecutor = DefaultEventExecutor(
         coroutineDispatchers,

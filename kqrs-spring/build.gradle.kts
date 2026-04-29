@@ -5,7 +5,6 @@ plugins {
 dependencies {
     api(platform(libs.spring.boot.dependencies))
     api(project(":kqrs-core"))
-    api(project(":kqrs-coroutines"))
     api(project(":kqrs-reactor"))
     api(project(":kqrs-metrics-prometheus"))
     api(libs.spring.boot.starter.web)

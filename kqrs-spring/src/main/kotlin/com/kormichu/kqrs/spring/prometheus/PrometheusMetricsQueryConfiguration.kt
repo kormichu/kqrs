@@ -1,22 +1,22 @@
-package com.kormichu.kqrs.prometheus
+package com.kormichu.kqrs.spring.prometheus
 
 import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.boot.autoconfigure.AutoConfiguration
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
-import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import com.kormichu.kqrs.logger.logger
 import com.kormichu.kqrs.metrics.MetricsErrorProcessQueryEventHandler
 import com.kormichu.kqrs.metrics.MetricsStartProcessQueryEventHandler
 import com.kormichu.kqrs.metrics.MetricsStopProcessQueryEventHandler
-import com.kormichu.kqrs.infrastructure.spring.SpringCqrsProperties
+import com.kormichu.kqrs.metrics.prometheus.PrometheusMetricsErrorQueryEventHandler
+import com.kormichu.kqrs.metrics.prometheus.PrometheusMetricsStartQueryEventHandler
+import com.kormichu.kqrs.metrics.prometheus.PrometheusMetricsStopQueryEventHandler
 
 @Configuration
 @ConditionalOnBean(MeterRegistry::class)
 @AutoConfiguration
-@EnableConfigurationProperties(SpringCqrsProperties::class)
 class PrometheusMetricsQueryConfiguration {
     private val logger by logger()
 

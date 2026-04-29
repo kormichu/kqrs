@@ -1,6 +1,6 @@
 package com.kormichu.kqrs.event
 
-import com.kormichu.kqrs.coroutines.CoroutineDispatchers
+import com.kormichu.kqrs.AsyncDispatchers
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -12,7 +12,7 @@ interface EventExecutor {
 }
 
 class DefaultEventExecutor(
-    private val coroutineDispatchers: CoroutineDispatchers,
+    private val asyncDispatchers: AsyncDispatchers,
     private val blockingListener: Boolean
 ): EventExecutor {
     private val logger by logger()
@@ -49,7 +49,7 @@ class DefaultEventExecutor(
 
     private fun launchEventDispatch(block: suspend CoroutineScope.() -> Unit) {
         CoroutineScope(
-            coroutineDispatchers.eventExecutorContext()
+            asyncDispatchers.eventExecutorContext()
         ).launch(block = block)
     }
 

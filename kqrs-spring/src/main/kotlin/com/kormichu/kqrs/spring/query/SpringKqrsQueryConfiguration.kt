@@ -1,6 +1,6 @@
 package com.kormichu.kqrs.spring.query
 
-import com.kormichu.kqrs.coroutines.CoroutineDispatchers
+import com.kormichu.kqrs.AsyncDispatchers
 import com.kormichu.kqrs.query.AsyncQueryBus
 import com.kormichu.kqrs.query.AsyncQueryExecutor
 import com.kormichu.kqrs.query.AsyncQueryHandlerStorage
@@ -30,7 +30,7 @@ class SpringKqrsQueryConfiguration {
     @Bean
     @ConditionalOnMissingBean(AsyncQueryExecutor::class)
     fun kqrsAsyncQueryExecutor(
-        coroutineDispatchers: CoroutineDispatchers
+        coroutineDispatchers: AsyncDispatchers
     ): AsyncQueryExecutor = DefaultAsyncQueryExecutor(coroutineDispatchers)
 
     @Bean

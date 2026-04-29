@@ -1,7 +1,7 @@
 package com.kormichu.kqrs.command
 
 import kotlinx.coroutines.withContext
-import com.kormichu.kqrs.coroutines.CoroutineDispatchers
+import com.kormichu.kqrs.AsyncDispatchers
 import com.kormichu.kqrs.logger.logger
 import kotlin.getValue
 
@@ -10,7 +10,7 @@ interface AsyncCommandExecutor {
 }
 
 class DefaultAsyncCommandExecutor(
-    private val coroutineDispatchers: CoroutineDispatchers
+    private val coroutineDispatchers: AsyncDispatchers
 ): AsyncCommandExecutor {
     private val logger by logger()
 

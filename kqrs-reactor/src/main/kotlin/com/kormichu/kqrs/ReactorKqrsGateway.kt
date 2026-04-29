@@ -1,7 +1,5 @@
-package com.kormichu.kqrs.infrastructure.reactor
+package com.kormichu.kqrs
 
-import org.springframework.stereotype.Component
-import com.kormichu.kqrs.BaseKqrsGateway
 import com.kormichu.kqrs.command.Command
 import com.kormichu.kqrs.command.CommandBus
 import com.kormichu.kqrs.event.EventPublisher
@@ -11,13 +9,19 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.time.Instant
 
-@Component
-class ReactorCqrsGateway (
+interface ReactorKqrsGateway {
+    fun <C: Command<Mono<R>>, R: Any> dispatch(command: C): Mono<R>
+    fun <C: Command<Flux<R>>, R: Any> dispatch(command: C): Flux<R>
+    fun <Q: Query<Mono<R>>, R: Any> query(query: Q): Mono<R>
+    fun <Q: Query<Flux<R>>, R: Any> query(query: Q): Flux<R>
+}
+
+class DefaultReactorKqrsGateway (
     private val commandBus: CommandBus,
     private val queryBus: QueryBus,
     eventPublisher: EventPublisher
-): BaseKqrsGateway(eventPublisher) {
-    fun <C: Command<Mono<R>>, R: Any> dispatch(command: C): Mono<R> =
+): BaseKqrsGateway(eventPublisher), ReactorKqrsGateway {
+    override fun <C: Command<Mono<R>>, R: Any> dispatch(command: C): Mono<R> =
         withCommandContext(command, false) {
             val startProcessingAt = Instant.now()
             commandBus.execute(command)
@@ -37,7 +41,7 @@ class ReactorCqrsGateway (
                 }
         }
 
-    fun <C: Command<Flux<R>>, R: Any> dispatch(command: C): Flux<R> =
+    override fun <C: Command<Flux<R>>, R: Any> dispatch(command: C): Flux<R> =
         withCommandContext(command, false) {
             val startProcessingAt = Instant.now()
             commandBus.execute(command)
@@ -56,7 +60,7 @@ class ReactorCqrsGateway (
                 }
         }
 
-    fun <Q: Query<Mono<R>>, R: Any> query(query: Q): Mono<R> =
+    override fun <Q: Query<Mono<R>>, R: Any> query(query: Q): Mono<R> =
         withQueryContext(query, false) {
             val startProcessingAt = Instant.now()
             queryBus.dispatch(query)
@@ -72,7 +76,7 @@ class ReactorCqrsGateway (
                 }
         }
 
-    fun <Q: Query<Flux<R>>, R: Any> query(query: Q): Flux<R> =
+    override fun <Q: Query<Flux<R>>, R: Any> query(query: Q): Flux<R> =
         withQueryContext(query, false) {
             val startProcessingAt = Instant.now()
             queryBus.dispatch(query)

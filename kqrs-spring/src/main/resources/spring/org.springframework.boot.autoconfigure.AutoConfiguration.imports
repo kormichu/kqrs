@@ -1,1 +1,8 @@
-com.kormichu.kqrs.spring.SpringCqrsConfiguration
+com.kormichu.kqrs.spring.SpringKqrsConfiguration
+com.kormichu.kqrs.spring.command.SpringKqrsCommandConfiguration
+com.kormichu.kqrs.spring.query.SpringKqrsQueryConfiguration
+com.kormichu.kqrs.spring.event.SpringKqrsEventConfiguration
+com.kormichu.kqrs.spring.transaction.SpringKqrsTransactionConfiguration
+com.kormichu.kqrs.spring.prometheus.PrometheusMetricsCommandConfiguration
+com.kormichu.kqrs.spring.prometheus.PrometheusMetricsQueryConfiguration
+com.kormichu.kqrs.spring.reactor.ReactorKqrsConfiguration

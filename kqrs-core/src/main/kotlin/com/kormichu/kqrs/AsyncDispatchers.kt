@@ -1,4 +1,4 @@
-package com.kormichu.kqrs.coroutines
+package com.kormichu.kqrs
 
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -6,7 +6,7 @@ import kotlinx.coroutines.slf4j.MDCContext
 import com.kormichu.kqrs.logger.logger
 import kotlin.coroutines.CoroutineContext
 
-interface CoroutineDispatchers {
+interface AsyncDispatchers {
     val defaultCommandIODispatcher: CoroutineDispatcher
     val defaultQueryIODispatcher: CoroutineDispatcher
     val defaultEventDispatcher: CoroutineDispatcher
@@ -32,11 +32,11 @@ interface CoroutineDispatchers {
     ): CoroutineContext = defaultEventDispatcher
 }
 
-open class DefaultCoroutineDispatchers(
+open class DefaultAsyncDispatchers(
     override val defaultCommandIODispatcher: CoroutineDispatcher,
     override val defaultQueryIODispatcher: CoroutineDispatcher,
     override val defaultEventDispatcher: CoroutineDispatcher
-): CoroutineDispatchers {
+): AsyncDispatchers {
     private val logger by logger()
 
     private val exceptionHandler = CoroutineExceptionHandler { _, exception ->

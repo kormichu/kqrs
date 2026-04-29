@@ -1,3 +1,5 @@
+import org.gradle.kotlin.dsl.register
+
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.spring)
@@ -98,7 +100,9 @@ subprojects {
         }
     }
 
-    val integrationTest = task<Test>("integrationTest") {
+    val integrationTest = tasks.register<Test>(
+        "integrationTest"
+    ) {
         description = "Runs integration tests."
         group = "verification"
 

@@ -10,7 +10,7 @@ import com.kormichu.kqrs.command.DefaultAsyncCommandBus
 import com.kormichu.kqrs.command.DefaultAsyncCommandExecutor
 import com.kormichu.kqrs.command.DefaultCommandBus
 import com.kormichu.kqrs.command.DefaultCommandExecutor
-import com.kormichu.kqrs.coroutines.CoroutineDispatchers
+import com.kormichu.kqrs.AsyncDispatchers
 import com.kormichu.kqrs.spring.SpringKqrsProperties
 import org.springframework.boot.autoconfigure.AutoConfiguration
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
@@ -30,7 +30,7 @@ class SpringKqrsCommandConfiguration {
     @Bean
     @ConditionalOnMissingBean(AsyncCommandExecutor::class)
     fun kqrsAsyncCommandExecutor(
-        coroutineDispatchers: CoroutineDispatchers
+        coroutineDispatchers: AsyncDispatchers
     ): AsyncCommandExecutor = DefaultAsyncCommandExecutor(coroutineDispatchers)
 
     @Bean

@@ -4,8 +4,8 @@ import com.kormichu.kqrs.DefaultKqrsGateway
 import com.kormichu.kqrs.KqrsGateway
 import com.kormichu.kqrs.command.AsyncCommandBus
 import com.kormichu.kqrs.command.CommandBus
-import com.kormichu.kqrs.coroutines.CoroutineDispatchers
-import com.kormichu.kqrs.coroutines.DefaultCoroutineDispatchers
+import com.kormichu.kqrs.AsyncDispatchers
+import com.kormichu.kqrs.DefaultAsyncDispatchers
 import com.kormichu.kqrs.event.EventPublisher
 import com.kormichu.kqrs.query.AsyncQueryBus
 import com.kormichu.kqrs.query.QueryBus
@@ -36,8 +36,8 @@ class SpringKqrsConfiguration {
 
     @Bean
     @Suppress("InjectDispatcher")
-    fun kqrsCoroutineBusDispatchers(): CoroutineDispatchers =
-        DefaultCoroutineDispatchers(
+    fun kqrsCoroutineBusDispatchers(): AsyncDispatchers =
+        DefaultAsyncDispatchers(
             defaultCommandIODispatcher = Dispatchers.IO,
             defaultQueryIODispatcher = Dispatchers.IO,
             defaultEventDispatcher = Dispatchers.Default,
