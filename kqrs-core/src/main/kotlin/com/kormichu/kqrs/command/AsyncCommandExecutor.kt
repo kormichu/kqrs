@@ -1,9 +1,8 @@
 package com.kormichu.kqrs.command
 
-import kotlinx.coroutines.withContext
 import com.kormichu.kqrs.AsyncDispatchers
 import com.kormichu.kqrs.logger.logger
-import kotlin.getValue
+import kotlinx.coroutines.withContext
 
 interface AsyncCommandExecutor {
     suspend fun <C : Command<R>, R> executeAsync(command: C, handler: AsyncCommandHandler<C, R>): R
@@ -11,7 +10,7 @@ interface AsyncCommandExecutor {
 
 class DefaultAsyncCommandExecutor(
     private val coroutineDispatchers: AsyncDispatchers
-): AsyncCommandExecutor {
+) : AsyncCommandExecutor {
     private val logger by logger()
 
     override suspend fun <C : Command<R>, R> executeAsync(command: C, handler: AsyncCommandHandler<C, R>): R {
@@ -19,13 +18,13 @@ class DefaultAsyncCommandExecutor(
             "Executing async command {} with ID: {} by handler {}",
             command::class.java.simpleName,
             command.commandId,
-            handler::class.java.simpleName
+            handler::class.java.simpleName,
         )
         return handler.dispatcher?.let {
             withContext(coroutineDispatchers.commandExecutorContext(it)) {
                 handler.handle(command)
             }
-        } ?: when(handler) {
+        } ?: when (handler) {
             is AsyncIOCommandHandler<*, *> -> withContext(coroutineDispatchers.commandIOExecutorContext()) {
                 handler.handle(command)
             }

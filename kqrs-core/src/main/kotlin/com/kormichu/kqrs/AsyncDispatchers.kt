@@ -1,9 +1,9 @@
 package com.kormichu.kqrs
 
+import com.kormichu.kqrs.logger.logger
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.slf4j.MDCContext
-import com.kormichu.kqrs.logger.logger
 import kotlin.coroutines.CoroutineContext
 
 interface AsyncDispatchers {
@@ -36,7 +36,7 @@ open class DefaultAsyncDispatchers(
     override val defaultCommandIODispatcher: CoroutineDispatcher,
     override val defaultQueryIODispatcher: CoroutineDispatcher,
     override val defaultEventDispatcher: CoroutineDispatcher
-): AsyncDispatchers {
+) : AsyncDispatchers {
     private val logger by logger()
 
     private val exceptionHandler = CoroutineExceptionHandler { _, exception ->
@@ -52,7 +52,7 @@ open class DefaultAsyncDispatchers(
     override fun commandIOExecutorContext(
         commandDispatcher: CoroutineDispatcher?
     ) = commandExecutorContext(
-        commandDispatcher ?: defaultCommandIODispatcher
+        commandDispatcher ?: defaultCommandIODispatcher,
     )
 
     override fun queryExecutorContext(
@@ -64,7 +64,7 @@ open class DefaultAsyncDispatchers(
     override fun queryIOExecutorContext(
         queryDispatcher: CoroutineDispatcher?
     ) = queryExecutorContext(
-        queryDispatcher ?: defaultQueryIODispatcher
+        queryDispatcher ?: defaultQueryIODispatcher,
     )
 
     override fun eventExecutorContext(

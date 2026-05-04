@@ -4,7 +4,7 @@ import com.kormichu.kqrs.Id
 import com.kormichu.kqrs.event.EventTag
 import com.kormichu.kqrs.helper.ClassParameterizedHelper
 
-open class Query<R> (
+open class Query<R>(
     queryName: QueryName? = null,
     open val queryId: QueryId = Id.Companion.generateUuidV7()
 ) {

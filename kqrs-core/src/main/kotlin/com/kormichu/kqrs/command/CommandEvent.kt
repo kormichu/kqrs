@@ -5,32 +5,32 @@ import com.kormichu.kqrs.event.EventTag
 import java.time.Duration
 import java.time.Instant
 
-sealed class CommandEvent<C: CommandName> (
+sealed class CommandEvent<C : CommandName>(
     open val commandName: C,
     override val eventTags: List<EventTag>
-): Event()
+) : Event()
 
-data class StartProcessCommandEvent<C: CommandName> (
+data class StartProcessCommandEvent<C : CommandName>(
     override val commandName: C,
     override val eventTags: List<EventTag>
-): CommandEvent<C>(commandName, eventTags) {
+) : CommandEvent<C>(commandName, eventTags) {
     companion object {
         fun fromCommand(
             command: Command<*>
         ): StartProcessCommandEvent<*> {
             return StartProcessCommandEvent(
                 commandName = command.commandName,
-                eventTags = command.getEventTags()
+                eventTags = command.getEventTags(),
             )
         }
     }
 }
 
-data class StopProcessCommandEvent<C: CommandName> (
+data class StopProcessCommandEvent<C : CommandName>(
     override val commandName: C,
     override val eventTags: List<EventTag>,
     val startProcessingAt: Instant,
-): CommandEvent<C>(commandName, eventTags) {
+) : CommandEvent<C>(commandName, eventTags) {
     val duration: Duration = Duration.between(startProcessingAt, occurredOn)
 
     companion object {
@@ -41,18 +41,18 @@ data class StopProcessCommandEvent<C: CommandName> (
             return StopProcessCommandEvent(
                 commandName = command.commandName,
                 startProcessingAt = startProcessingAt,
-                eventTags = command.getEventTags()
+                eventTags = command.getEventTags(),
             )
         }
     }
 }
 
-data class ErrorProcessCommandEvent<C: CommandName> (
+data class ErrorProcessCommandEvent<C : CommandName>(
     override val commandName: C,
     override val eventTags: List<EventTag>,
     val startProcessingAt: Instant,
     val exception: Throwable
-): CommandEvent<C>(commandName, eventTags) {
+) : CommandEvent<C>(commandName, eventTags) {
     val duration: Duration = Duration.between(startProcessingAt, occurredOn)
 
     companion object {
@@ -65,18 +65,18 @@ data class ErrorProcessCommandEvent<C: CommandName> (
                 commandName = command.commandName,
                 startProcessingAt = startProcessingAt,
                 eventTags = command.getEventTags(),
-                exception = exception
+                exception = exception,
             )
         }
     }
 }
 
-data class ValidationFailedCommandEvent<C: CommandName>(
+data class ValidationFailedCommandEvent<C : CommandName>(
     override val commandName: C,
     override val eventTags: List<EventTag>,
     val startProcessingAt: Instant,
     val exception: ValidationCommandHandlerException
-): CommandEvent<C>(commandName, eventTags) {
+) : CommandEvent<C>(commandName, eventTags) {
     val duration: Duration = Duration.between(startProcessingAt, occurredOn)
 
     companion object {
@@ -89,7 +89,7 @@ data class ValidationFailedCommandEvent<C: CommandName>(
                 commandName = command.commandName,
                 startProcessingAt = startProcessingAt,
                 exception = exception,
-                eventTags = command.getEventTags()
+                eventTags = command.getEventTags(),
             )
         }
     }

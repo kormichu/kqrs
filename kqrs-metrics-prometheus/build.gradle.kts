@@ -5,6 +5,10 @@ plugins {
 dependencies {
     api(project(":kqrs-core"))
     api(libs.micrometer.core)
+
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.assertk.jvm)
 }
 
 java {

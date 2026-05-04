@@ -4,7 +4,7 @@ import com.kormichu.kqrs.Handler
 import com.kormichu.kqrs.transaction.TransactionalExecutor
 import kotlin.reflect.KClass
 
-interface QueryHandler<Q : Query<R>, R>: Handler<Q> {
+interface QueryHandler<Q : Query<R>, R> : Handler<Q> {
     fun handle(query: Q): R
 
     @Suppress("UNCHECKED_CAST")
@@ -12,7 +12,7 @@ interface QueryHandler<Q : Query<R>, R>: Handler<Q> {
         QueryHandler::class as KClass<Handler<Q>>
 }
 
-interface TransactionalQueryHandler<Q : Query<R>, R>: QueryHandler<Q, R> {
+interface TransactionalQueryHandler<Q : Query<R>, R> : QueryHandler<Q, R> {
     val transactionalExecutor: TransactionalExecutor
 
     fun handleInTransaction(query: Q): R

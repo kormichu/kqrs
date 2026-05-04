@@ -5,32 +5,32 @@ import com.kormichu.kqrs.event.EventTag
 import java.time.Duration
 import java.time.Instant
 
-sealed class QueryEvent<Q: QueryName> (
+sealed class QueryEvent<Q : QueryName>(
     open val queryName: Q,
     override val eventTags: List<EventTag>
-): Event()
+) : Event()
 
-data class StartProcessQueryEvent<Q: QueryName>(
+data class StartProcessQueryEvent<Q : QueryName>(
     override val queryName: Q,
     override val eventTags: List<EventTag>
-): QueryEvent<Q>(queryName, eventTags) {
+) : QueryEvent<Q>(queryName, eventTags) {
     companion object {
         fun fromQuery(
             query: Query<*>
         ): StartProcessQueryEvent<*> {
             return StartProcessQueryEvent(
                 queryName = query.queryName,
-                eventTags = query.getEventTags()
+                eventTags = query.getEventTags(),
             )
         }
     }
 }
 
-data class StopProcessQueryEvent<Q: QueryName>(
+data class StopProcessQueryEvent<Q : QueryName>(
     override val queryName: Q,
     override val eventTags: List<EventTag>,
     val startProcessingAt: Instant
-): QueryEvent<Q>(queryName, eventTags) {
+) : QueryEvent<Q>(queryName, eventTags) {
     val duration: Duration = Duration.between(startProcessingAt, occurredOn)
 
     companion object {
@@ -41,18 +41,18 @@ data class StopProcessQueryEvent<Q: QueryName>(
             return StopProcessQueryEvent(
                 queryName = query.queryName,
                 startProcessingAt = startProcessingAt,
-                eventTags = query.getEventTags()
+                eventTags = query.getEventTags(),
             )
         }
     }
 }
 
-data class ErrorProcessQueryEvent<Q: QueryName>(
+data class ErrorProcessQueryEvent<Q : QueryName>(
     override val queryName: Q,
     override val eventTags: List<EventTag>,
     val startProcessingAt: Instant,
     val exception: Throwable
-): QueryEvent<Q>(queryName, eventTags) {
+) : QueryEvent<Q>(queryName, eventTags) {
     val duration: Duration = Duration.between(startProcessingAt, occurredOn)
 
     companion object {
@@ -65,18 +65,18 @@ data class ErrorProcessQueryEvent<Q: QueryName>(
                 queryName = query.queryName,
                 startProcessingAt = startProcessingAt,
                 exception = exception,
-                eventTags = query.getEventTags()
+                eventTags = query.getEventTags(),
             )
         }
     }
 }
 
-data class ValidationFailedQueryEvent<Q: QueryName>(
+data class ValidationFailedQueryEvent<Q : QueryName>(
     override val queryName: Q,
     override val eventTags: List<EventTag>,
     val startProcessingAt: Instant,
     val exception: ValidationQueryHandlerException
-): QueryEvent<Q>(queryName, eventTags) {
+) : QueryEvent<Q>(queryName, eventTags) {
     val duration: Duration = Duration.between(startProcessingAt, occurredOn)
 
     companion object {
@@ -89,7 +89,7 @@ data class ValidationFailedQueryEvent<Q: QueryName>(
                 queryName = query.queryName,
                 startProcessingAt = startProcessingAt,
                 exception = exception,
-                eventTags = query.getEventTags()
+                eventTags = query.getEventTags(),
             )
         }
     }

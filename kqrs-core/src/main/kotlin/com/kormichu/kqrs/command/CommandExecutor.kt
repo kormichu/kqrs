@@ -1,13 +1,12 @@
 package com.kormichu.kqrs.command
 
 import com.kormichu.kqrs.logger.logger
-import kotlin.getValue
 
 interface CommandExecutor {
     fun <C : Command<R>, R> execute(command: C, handler: CommandHandler<C, R>): R
 }
 
-class DefaultCommandExecutor: CommandExecutor {
+class DefaultCommandExecutor : CommandExecutor {
     private val logger by logger()
 
     override fun <C : Command<R>, R> execute(command: C, handler: CommandHandler<C, R>): R {
@@ -15,7 +14,7 @@ class DefaultCommandExecutor: CommandExecutor {
             "Executing command {} with ID: {} by handler {}",
             command::class.java.simpleName,
             command.commandId,
-            handler::class.java.simpleName
+            handler::class.java.simpleName,
         )
         return handler.handle(command)
     }

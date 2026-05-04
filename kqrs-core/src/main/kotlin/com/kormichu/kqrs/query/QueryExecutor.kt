@@ -1,7 +1,6 @@
 package com.kormichu.kqrs.query
 
 import com.kormichu.kqrs.logger.logger
-import kotlin.getValue
 
 interface QueryExecutor {
     fun <Q : Query<R>, R> execute(query: Q, handler: QueryHandler<Q, R>): R
@@ -15,7 +14,7 @@ class DefaultQueryExecutor : QueryExecutor {
             "Executing query {} with ID: {} by handler {}",
             query::class.java.simpleName,
             query.queryId,
-            handler::class.java.simpleName
+            handler::class.java.simpleName,
         )
         return handler.handle(query)
     }

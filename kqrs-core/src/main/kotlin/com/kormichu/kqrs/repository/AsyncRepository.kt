@@ -13,6 +13,7 @@ interface AsyncRepository<T : AggregateRoot<ID>, ID : Id<*>> {
         publishEvents(aggregate, eventPublisher)
         return id
     }
+
     suspend fun publishEvents(aggregate: T, eventPublisher: EventPublisher) {
         val events = aggregate.pullEvents()
         if (events.isNotEmpty()) {

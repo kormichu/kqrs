@@ -2,13 +2,11 @@ package com.kormichu.kqrs.command
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
-import assertk.assertions.isInstanceOf
 import io.mockk.clearAllMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.verify
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -40,7 +38,7 @@ class DefaultAsyncCommandBusTest {
         coEvery { asyncCommandExecutor.executeAsync(command, handler) } returns expectedResult
 
         // when
-        val result = commandBus.executeAsync(command)
+        val result = commandBus.dispatchAsync(command)
 
         // then
         assertThat(result).isEqualTo(expectedResult)
@@ -56,7 +54,7 @@ class DefaultAsyncCommandBusTest {
 
         // when & then
         assertThrows<UnsupportedAsyncCommandException> {
-            commandBus.executeAsync(command)
+            commandBus.dispatchAsync(command)
         }
     }
 
@@ -74,8 +72,8 @@ class DefaultAsyncCommandBusTest {
         coEvery { asyncCommandExecutor.executeAsync(command2, handler2) } returns "async-result2"
 
         // when
-        val result1 = commandBus.executeAsync(command1)
-        val result2 = commandBus.executeAsync(command2)
+        val result1 = commandBus.dispatchAsync(command1)
+        val result2 = commandBus.dispatchAsync(command2)
 
         // then
         assertThat(result1).isEqualTo("async-result1")
@@ -92,7 +90,7 @@ class DefaultAsyncCommandBusTest {
         coEvery { asyncCommandExecutor.executeAsync(command, handler) } returns null
 
         // when
-        val result = commandBus.executeAsync(command)
+        val result = commandBus.dispatchAsync(command)
 
         // then
         assertThat(result).isEqualTo(null)

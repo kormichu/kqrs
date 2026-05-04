@@ -4,13 +4,12 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.full.superclasses
 
-interface Handler<O: Any> {
+interface Handler<O : Any> {
     val objectClass: KClass<O>
         get() {
             val typeArgument = findTypeArgument(this::class)
             @Suppress("UNCHECKED_CAST")
-            return typeArgument?.classifier as? KClass<O> ?:
-                error("Could not determine type parameter O")
+            return typeArgument?.classifier as? KClass<O> ?: error("Could not determine type parameter O")
         }
 
     fun getBaseHandlerClass(): KClass<Handler<O>>

@@ -1,4 +1,5 @@
 package com.kormichu.kqrs.query
+
 import kotlin.reflect.KClass
 
 interface QueryBus {
@@ -17,9 +18,9 @@ open class DefaultQueryBus(
     }
 }
 
-abstract class ValidationQueryHandlerException(message: String): RuntimeException(message)
+abstract class ValidationQueryHandlerException(message: String) : RuntimeException(message)
 
-class UnsupportedQueryException(query: Query<*>):
+class UnsupportedQueryException(query: Query<*>) :
     Exception("The query %s is unsupported by any handler".format(query.javaClass))
 
 interface QueryHandlerStorage {

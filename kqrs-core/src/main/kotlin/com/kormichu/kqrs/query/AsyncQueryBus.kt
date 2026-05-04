@@ -9,7 +9,7 @@ interface AsyncQueryBus {
 open class DefaultAsyncQueryBus(
     private val asyncQueryExecutor: AsyncQueryExecutor,
     private val asyncHandlerStorage: AsyncQueryHandlerStorage
-): AsyncQueryBus {
+) : AsyncQueryBus {
     @Suppress("UNCHECKED_CAST")
     override suspend fun <Q : Query<R>, R> dispatchAsync(query: Q): R {
         val handler = asyncHandlerStorage.getHandler(query::class)
@@ -18,9 +18,8 @@ open class DefaultAsyncQueryBus(
     }
 }
 
-class UnsupportedAsyncQueryException(query: Query<*>):
+class UnsupportedAsyncQueryException(query: Query<*>) :
     Exception("The async query %s is unsupported by any handler".format(query.javaClass))
-
 
 interface AsyncQueryHandlerStorage {
     fun <Q : Query<R>, R> getHandler(queryClass: KClass<Q>): AsyncQueryHandler<Q, R>?

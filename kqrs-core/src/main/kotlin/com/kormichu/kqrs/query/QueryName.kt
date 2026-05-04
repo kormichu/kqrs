@@ -12,4 +12,4 @@ open class QueryName(open val value: String) {
     }
 }
 
-data class DefaultQueryName(override val value: String): QueryName(value)
+data class DefaultQueryName(override val value: String) : QueryName(value)

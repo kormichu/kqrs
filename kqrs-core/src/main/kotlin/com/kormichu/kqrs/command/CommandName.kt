@@ -12,4 +12,4 @@ open class CommandName(open val value: String) {
     }
 }
 
-data class DefaultCommandName(override val value: String): CommandName(value)
+data class DefaultCommandName(override val value: String) : CommandName(value)

@@ -6,14 +6,18 @@ import com.kormichu.kqrs.command.CommandEvent
 import com.kormichu.kqrs.command.ErrorProcessCommandEvent
 import com.kormichu.kqrs.command.StartProcessCommandEvent
 import com.kormichu.kqrs.command.StopProcessCommandEvent
+import com.kormichu.kqrs.metrics.MetricsCommandEventHandler
 import com.kormichu.kqrs.metrics.MetricsErrorProcessCommandEventHandler
 import com.kormichu.kqrs.metrics.MetricsStartProcessCommandEventHandler
 import com.kormichu.kqrs.metrics.MetricsStopProcessCommandEventHandler
 import kotlin.collections.plus
 
+interface PrometheusMetricsCommandEventHandler<E : CommandEvent<*>>: MetricsCommandEventHandler<E>
+
 class PrometheusMetricsStartCommandEventHandler(
     private val meterRegistry: MeterRegistry
-): MetricsStartProcessCommandEventHandler {
+):  PrometheusMetricsCommandEventHandler<StartProcessCommandEvent<*>>,
+    MetricsStartProcessCommandEventHandler {
     override suspend fun handle(event: StartProcessCommandEvent<*>) {
         meterRegistry.counter(
             METRIC_COMMAND_START_PROCESS,
@@ -24,7 +28,8 @@ class PrometheusMetricsStartCommandEventHandler(
 
 class PrometheusMetricsStopCommandEventHandler(
     private val meterRegistry: MeterRegistry
-): MetricsStopProcessCommandEventHandler {
+):  PrometheusMetricsCommandEventHandler<StopProcessCommandEvent<*>>,
+    MetricsStopProcessCommandEventHandler {
     override suspend fun handle(event: StopProcessCommandEvent<*>) {
         val tags = event.toMicrometerTags()
         meterRegistry.counter(
@@ -40,7 +45,8 @@ class PrometheusMetricsStopCommandEventHandler(
 
 class PrometheusMetricsErrorCommandEventHandler(
     private val meterRegistry: MeterRegistry
-): MetricsErrorProcessCommandEventHandler {
+):  PrometheusMetricsCommandEventHandler<ErrorProcessCommandEvent<*>>,
+    MetricsErrorProcessCommandEventHandler {
     override suspend fun handle(event: ErrorProcessCommandEvent<*>) {
         meterRegistry.counter(
             METRIC_COMMAND_ERROR_PROCESS,
@@ -53,7 +59,7 @@ fun CommandEvent<*>.toMicrometerTags(): List<Tag> =
     eventTags.map { Tag.of(it.key, it.value) } +
         listOf(Tag.of("command", commandName.value))
 
-private const val METRIC_COMMAND_START_PROCESS = "cqrs_command_start"
-private const val METRIC_COMMAND_STOP_PROCESS = "cqrs_command_stop"
-private const val METRIC_COMMAND_ERROR_PROCESS = "cqrs_command_error"
-private const val METRIC_COMMAND_DURATION = "cqrs_command_duration"
+private const val METRIC_COMMAND_START_PROCESS = "kqrs_command_start"
+private const val METRIC_COMMAND_STOP_PROCESS = "kqrs_command_stop"
+private const val METRIC_COMMAND_ERROR_PROCESS = "kqrs_command_error"
+private const val METRIC_COMMAND_DURATION = "kqrs_command_duration"

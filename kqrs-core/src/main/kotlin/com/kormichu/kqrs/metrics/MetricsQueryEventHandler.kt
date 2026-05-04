@@ -8,11 +8,12 @@ import com.kormichu.kqrs.query.StartProcessQueryEvent
 import com.kormichu.kqrs.query.StopProcessQueryEvent
 import kotlin.reflect.KClass
 
-interface MetricsQueryEventHandler<E: QueryEvent<*>>: EventHandler<E> {
+interface MetricsQueryEventHandler<E : QueryEvent<*>> : EventHandler<E> {
     @Suppress("UNCHECKED_CAST")
     override fun getBaseHandlerClass(): KClass<Handler<E>> =
         MetricsQueryEventHandler::class as KClass<Handler<E>>
 }
-interface MetricsStartProcessQueryEventHandler: MetricsQueryEventHandler<StartProcessQueryEvent<*>>
-interface MetricsStopProcessQueryEventHandler: MetricsQueryEventHandler<StopProcessQueryEvent<*>>
-interface MetricsErrorProcessQueryEventHandler: MetricsQueryEventHandler<ErrorProcessQueryEvent<*>>
+
+interface MetricsStartProcessQueryEventHandler : MetricsQueryEventHandler<StartProcessQueryEvent<*>>
+interface MetricsStopProcessQueryEventHandler : MetricsQueryEventHandler<StopProcessQueryEvent<*>>
+interface MetricsErrorProcessQueryEventHandler : MetricsQueryEventHandler<ErrorProcessQueryEvent<*>>

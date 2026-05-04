@@ -4,8 +4,8 @@ import java.lang.reflect.ParameterizedType
 
 internal object ClassParameterizedHelper {
     fun <T> getClassParameter(instance: Any, index: Int = 0): Class<T> {
-        return findClassParameterInHierarchy(instance.javaClass, index) ?:
-            error("Could not resolve generic type at position $index for ${instance.javaClass}")
+        return findClassParameterInHierarchy(instance.javaClass, index)
+            ?: error("Could not resolve generic type at position $index for ${instance.javaClass}")
     }
 
     private fun <T> findClassParameterInHierarchy(clazz: Class<*>, index: Int): Class<T>? {

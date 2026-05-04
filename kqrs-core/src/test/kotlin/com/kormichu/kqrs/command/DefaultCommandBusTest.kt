@@ -37,7 +37,7 @@ class DefaultCommandBusTest {
         every { commandExecutor.execute(command, handler) } returns expectedResult
 
         // when
-        val result = commandBus.execute(command)
+        val result = commandBus.dispatch(command)
 
         // then
         assertThat(result).isEqualTo(expectedResult)
@@ -53,7 +53,7 @@ class DefaultCommandBusTest {
 
         // when & then
         val exception = assertThrows<UnsupportedCommandException> {
-            commandBus.execute(command)
+            commandBus.dispatch(command)
         }
 
         assertThat(exception).isInstanceOf(UnsupportedCommandException::class)
@@ -73,8 +73,8 @@ class DefaultCommandBusTest {
         every { commandExecutor.execute(command2, handler2) } returns "result2"
 
         // when
-        val result1 = commandBus.execute(command1)
-        val result2 = commandBus.execute(command2)
+        val result1 = commandBus.dispatch(command1)
+        val result2 = commandBus.dispatch(command2)
 
         // then
         assertThat(result1).isEqualTo("result1")
@@ -91,7 +91,7 @@ class DefaultCommandBusTest {
         every { commandExecutor.execute(command, handler) } returns null
 
         // when
-        val result = commandBus.execute(command)
+        val result = commandBus.dispatch(command)
 
         // then
         assertThat(result).isEqualTo(null)

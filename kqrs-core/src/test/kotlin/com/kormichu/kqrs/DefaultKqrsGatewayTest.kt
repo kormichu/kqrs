@@ -68,7 +68,7 @@ class DefaultKqrsGatewayTest {
         // given
         val command = TestCommand("test")
         val expectedResult = TestCommandResult("success")
-        every { commandBus.execute(command) } returns expectedResult
+        every { commandBus.dispatch(command) } returns expectedResult
 
         val eventsSlot = mutableListOf<CommandEvent<TestCommandName>>()
         every { eventPublisher.publish(capture(eventsSlot)) } just runs
@@ -78,7 +78,7 @@ class DefaultKqrsGatewayTest {
 
         // then
         assertThat(result).isEqualTo(expectedResult)
-        verify(exactly = 1) { commandBus.execute(command) }
+        verify(exactly = 1) { commandBus.dispatch(command) }
         verify(exactly = 1) { eventPublisher.publish(ofType(StartProcessCommandEvent::class)) }
         verify(exactly = 1) { eventPublisher.publish(ofType(StopProcessCommandEvent::class)) }
         verify(exactly = 0) { eventPublisher.publish(ofType(ErrorProcessCommandEvent::class)) }
@@ -97,7 +97,7 @@ class DefaultKqrsGatewayTest {
         // given
         val command = TestCommand("test")
         val exception = RuntimeException("Command failed")
-        every { commandBus.execute(command) } throws exception
+        every { commandBus.dispatch(command) } throws exception
 
         val eventsSlot = mutableListOf<CommandEvent<*>>()
         every { eventPublisher.publish(capture(eventsSlot)) } just runs
@@ -192,17 +192,17 @@ class DefaultKqrsGatewayTest {
         // given
         val command = TestCommand("test")
         val expectedResult = TestCommandResult("async-success")
-        coEvery { asyncCommandBus.executeAsync(command) } returns expectedResult
+        coEvery { asyncCommandBus.dispatchAsync(command) } returns expectedResult
 
         val eventsSlot = mutableListOf<CommandEvent<*>>()
         coEvery { eventPublisher.publish(capture(eventsSlot)) } just runs
 
         // when
-        val result = gateway.dispatch(command)
+        val result = gateway.dispatchAsync(command)
 
         // then
         assertThat(result).isEqualTo(expectedResult)
-        coVerify (exactly = 1) { asyncCommandBus.executeAsync(command) }
+        coVerify (exactly = 1) { asyncCommandBus.dispatchAsync(command) }
         coVerify(exactly = 1) { eventPublisher.publish(ofType(StartProcessCommandEvent::class)) }
         coVerify(exactly = 1) { eventPublisher.publish(ofType(StopProcessCommandEvent::class)) }
         coVerify(exactly = 0) { eventPublisher.publish(ofType(ErrorProcessCommandEvent::class)) }
@@ -221,7 +221,7 @@ class DefaultKqrsGatewayTest {
         // given
         val command = TestCommand("test")
         val exception = RuntimeException("Async command failed")
-        coEvery { asyncCommandBus.executeAsync(command) } throws exception
+        coEvery { asyncCommandBus.dispatchAsync(command) } throws exception
 
         val eventsSlot = mutableListOf<CommandEvent<*>>()
         coEvery { eventPublisher.publish(capture(eventsSlot)) } just runs
@@ -284,7 +284,7 @@ class DefaultKqrsGatewayTest {
         // given
         val command = TestCommand("test")
         val exception = TestValidationCommandException("Validation failed")
-        every { commandBus.execute(command) } throws exception
+        every { commandBus.dispatch(command) } throws exception
 
         val eventsSlot = mutableListOf<CommandEvent<*>>()
         every { eventPublisher.publish(capture(eventsSlot)) } just runs
@@ -311,7 +311,7 @@ class DefaultKqrsGatewayTest {
         // given
         val command = TestCommand("test")
         val exception = TestValidationCommandException("Async validation failed")
-        coEvery { asyncCommandBus.executeAsync(command) } throws exception
+        coEvery { asyncCommandBus.dispatchAsync(command) } throws exception
 
         val eventsSlot = mutableListOf<CommandEvent<*>>()
         coEvery { eventPublisher.publish(capture(eventsSlot)) } just runs

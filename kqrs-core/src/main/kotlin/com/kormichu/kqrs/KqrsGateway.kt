@@ -21,35 +21,35 @@ import com.kormichu.kqrs.query.ValidationQueryHandlerException
 import java.time.Instant
 
 interface KqrsGateway {
-    fun <C: Command<R>, R> dispatch(command: C): R
-    fun <Q: Query<R>, R> query(query: Q): R
+    fun <C : Command<R>, R> dispatch(command: C): R
+    fun <Q : Query<R>, R> query(query: Q): R
 }
 
 interface AsyncKqrsGateway {
-    suspend fun <C: Command<R>, R> dispatchAsync(command: C): R
-    suspend fun <Q: Query<R>, R> queryAsync(query: Q): R
+    suspend fun <C : Command<R>, R> dispatchAsync(command: C): R
+    suspend fun <Q : Query<R>, R> queryAsync(query: Q): R
 }
 
-class DefaultKqrsGateway (
+class DefaultKqrsGateway(
     private val commandBus: CommandBus,
     private val asyncCommandBus: AsyncCommandBus,
     private val queryBus: QueryBus,
     private val asyncQueryBus: AsyncQueryBus,
     eventPublisher: EventPublisher,
-): BaseKqrsGateway(eventPublisher), KqrsGateway, AsyncKqrsGateway {
-    override fun <C: Command<R>, R> dispatch(command: C): R =
+) : BaseKqrsGateway(eventPublisher), KqrsGateway, AsyncKqrsGateway {
+    override fun <C : Command<R>, R> dispatch(command: C): R =
         withCommandContext(command) {
-            commandBus.execute(command).also {
+            commandBus.dispatch(command).also {
                 logger.info(
                     "The command {} with ID {} has been dispatched with result {}",
                     command,
                     command.commandId,
-                    it
+                    it,
                 )
             }
         }
 
-    override fun <Q: Query<R>, R> query(query: Q): R =
+    override fun <Q : Query<R>, R> query(query: Q): R =
         withQueryContext(query) {
             queryBus.dispatch(query).also {
                 logger.info("The query {} with ID {} has been executed", query, query.queryId)
@@ -57,19 +57,19 @@ class DefaultKqrsGateway (
             }
         }
 
-    override suspend fun <C: Command<R>, R> dispatchAsync(command: C): R =
+    override suspend fun <C : Command<R>, R> dispatchAsync(command: C): R =
         withCommandContext(command) {
-            asyncCommandBus.executeAsync(command).also {
+            asyncCommandBus.dispatchAsync(command).also {
                 logger.info(
                     "The async command {} with ID {} has been dispatched with result {}",
                     command,
                     command.commandId,
-                    it
+                    it,
                 )
             }
         }
 
-    override suspend fun <Q: Query<R>, R> queryAsync(query: Q): R =
+    override suspend fun <Q : Query<R>, R> queryAsync(query: Q): R =
         withQueryContext(query) {
             asyncQueryBus.dispatchAsync(query).also {
                 logger.info("The async query {} with ID {} has been executed", query, query.queryId)
@@ -78,7 +78,7 @@ class DefaultKqrsGateway (
         }
 }
 
-open class BaseKqrsGateway (
+open class BaseKqrsGateway(
     protected val eventPublisher: EventPublisher,
 ) {
     protected val logger by logger()
@@ -132,9 +132,15 @@ open class BaseKqrsGateway (
     protected fun handleCommandError(command: Command<*>, startProcessingAt: Instant, exception: Throwable) {
         when (exception) {
             is ValidationCommandHandlerException -> {
-                logger.info("Validation error while processing command {} with ID {}", command, command.commandId, exception)
+                logger.info(
+                    "Validation error while processing command {} with ID {}",
+                    command,
+                    command.commandId,
+                    exception,
+                )
                 eventPublisher.publish(ValidationFailedCommandEvent.fromCommand(command, startProcessingAt, exception))
             }
+
             else -> {
                 logger.error("Error while processing command {} with ID {}", command, command.commandId, exception)
                 eventPublisher.publish(ErrorProcessCommandEvent.fromCommand(command, startProcessingAt, exception))
@@ -146,8 +152,15 @@ open class BaseKqrsGateway (
         when (exception) {
             is ValidationQueryHandlerException -> {
                 logger.info("Validation error while processing query {} with ID {}", query, query.queryId, exception)
-                eventPublisher.publish(ValidationFailedQueryEvent.Companion.fromQuery(query, startProcessingAt, exception))
+                eventPublisher.publish(
+                    ValidationFailedQueryEvent.Companion.fromQuery(
+                        query,
+                        startProcessingAt,
+                        exception,
+                    ),
+                )
             }
+
             else -> {
                 logger.error("Error while processing query {} with {}", query, query.queryId, exception)
                 eventPublisher.publish(ErrorProcessQueryEvent.Companion.fromQuery(query, startProcessingAt, exception))

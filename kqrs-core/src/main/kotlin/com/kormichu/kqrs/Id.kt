@@ -1,7 +1,7 @@
 package com.kormichu.kqrs
 
 import com.github.f4b6a3.uuid.UuidCreator
-import java.util.UUID
+import java.util.*
 
 open class Id<V>(open val value: V) {
     companion object {

@@ -129,7 +129,6 @@ class DefaultAsyncCommandExecutorTest {
     }
 
     // Test commands
-    private data class TestCommand(val value: String) : Command<String?>()
     private data class TestAsyncCommand(val value: String) : Command<String?>()
     private data class TestAsyncIOCommand(val value: String) : Command<String?>()
     private data class TestAsyncIOTransactionalCommand(val value: String) : Command<String?>()
@@ -179,7 +178,10 @@ class DefaultAsyncCommandExecutorTest {
     private class RecordingTransactionalExecutor : TransactionalExecutor {
         var suspendExecutionCount = 0
 
-        override fun <T> execute(block: () -> T): T = block()
+        override fun <T> execute(block: () -> T): T {
+            suspendExecutionCount++
+            return block()
+        }
         override fun <T> executeReadOnly(block: () -> T): T = block()
     }
 }

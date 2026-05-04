@@ -24,7 +24,7 @@ class DefaultReactorKqrsGateway (
     override fun <C: Command<Mono<R>>, R: Any> dispatch(command: C): Mono<R> =
         withCommandContext(command, false) {
             val startProcessingAt = Instant.now()
-            commandBus.execute(command)
+            commandBus.dispatch(command)
                 .doOnSuccess {
                     logger.info(
                         "The mono command {} with ID {} has been dispatched with result {}",
@@ -44,7 +44,7 @@ class DefaultReactorKqrsGateway (
     override fun <C: Command<Flux<R>>, R: Any> dispatch(command: C): Flux<R> =
         withCommandContext(command, false) {
             val startProcessingAt = Instant.now()
-            commandBus.execute(command)
+            commandBus.dispatch(command)
                 .doOnComplete {
                     logger.info(
                         "The flux command {} with ID {} has been dispatched",
