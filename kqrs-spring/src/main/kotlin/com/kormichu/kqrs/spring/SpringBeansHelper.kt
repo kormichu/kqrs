@@ -4,7 +4,7 @@ import com.kormichu.kqrs.Handler
 import org.springframework.context.ApplicationContext
 import kotlin.reflect.KClass
 
-internal object SpringBeansHelper {
+object SpringBeansHelper {
     inline fun <reified H : Handler<*>> getHandlers(
         applicationContext: ApplicationContext,
         handlerClassName: Class<H>
@@ -35,6 +35,6 @@ internal object SpringBeansHelper {
         }
     }
 
-    private fun <K, V> buildMap(builderAction: MutableMap<K, V>.() -> Unit): Map<K, V> =
+    fun <K, V> buildMap(builderAction: MutableMap<K, V>.() -> Unit): Map<K, V> =
         mutableMapOf<K, V>().apply(builderAction)
 }

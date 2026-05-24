@@ -9,7 +9,7 @@ import com.kormichu.kqrs.spring.SpringBeansHelper
 import org.springframework.context.ApplicationContext
 import kotlin.reflect.KClass
 
-internal class SpringQueryHandlerStorage(
+class SpringQueryHandlerStorage(
     applicationContext: ApplicationContext
 ) : QueryHandlerStorage {
     private val handlersMap = SpringBeansHelper.getHandlers(
@@ -26,7 +26,7 @@ internal class SpringQueryHandlerStorage(
     }
 }
 
-internal class SpringAsyncQueryHandlerStorage(
+class SpringAsyncQueryHandlerStorage(
     applicationContext: ApplicationContext
 ) : AsyncQueryHandlerStorage {
     private val handlersMap = SpringBeansHelper.getHandlers(

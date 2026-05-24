@@ -9,7 +9,7 @@ import com.kormichu.kqrs.spring.SpringBeansHelper
 import org.springframework.context.ApplicationContext
 import kotlin.reflect.KClass
 
-internal class SpringCommandHandlerStorage(
+class SpringCommandHandlerStorage(
     applicationContext: ApplicationContext
 ) : CommandHandlerStorage {
     private val handlersMap = SpringBeansHelper.getHandlers(
@@ -26,7 +26,7 @@ internal class SpringCommandHandlerStorage(
     }
 }
 
-internal class SpringAsyncCommandHandlerStorage(
+class SpringAsyncCommandHandlerStorage(
     applicationContext: ApplicationContext
 ) : AsyncCommandHandlerStorage {
     private val handlersMap = SpringBeansHelper.getHandlers(

@@ -4,16 +4,15 @@ plugins {
 
 dependencies {
     api(platform(libs.spring.boot.dependencies))
-    api(project(":kqrs-core"))
+    api(project(":kqrs-spring-boot-autoconfigure"))
     api(project(":kqrs-reactor"))
-    api(project(":kqrs-metrics-prometheus"))
-    api(libs.spring.context)
-    api(libs.spring.tx)
-    api(libs.spring.data.commons)
+    api(libs.spring.boot.autoconfigure)
 
     testImplementation(libs.spring.boot.starter.test)
-    testImplementation(libs.mockk)
     testImplementation(libs.assertk.jvm)
+    testImplementation(libs.mockk)
+    testImplementation(libs.micrometer.core)
+    testImplementation(libs.reactor.core)
 }
 
 java {

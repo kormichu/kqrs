@@ -7,7 +7,6 @@ springDependency = "1.1.7"
 assertk = "0.28.1"
 mockk= "1.14.9"
 wiremock = "3.13.2"
-logbook = "3.12.3"
 detekt = "1.23.8"
 reactor = "3.8.2"
 slf4j = "2.0.17"
@@ -26,17 +25,15 @@ kotlinx-coroutines-slf4j = { group = "org.jetbrains.kotlinx", name = "kotlinx-co
 
 # spring boot
 spring-boot-dependencies = { group = "org.springframework.boot", name = "spring-boot-dependencies", version.ref = "springBoot" }
-spring-boot-starter-web = { group = "org.springframework.boot", name = "spring-boot-starter-web" }
+spring-boot-autoconfigure = { group = "org.springframework.boot", name = "spring-boot-autoconfigure" }
 
 # spring framework
+spring-context = { group = "org.springframework", name = "spring-context" }
 spring-tx = { group = "org.springframework", name = "spring-tx" }
 spring-data-commons = { group = "org.springframework.data", name = "spring-data-commons" }
 
 # reactor
 reactor-core = { group = "io.projectreactor", name = "reactor-core", version.ref = "reactor" }
-
-# logbook
-logbook-spring-boot-webflux-autoconfigure = { group = "org.zalando", name = "logbook-spring-boot-webflux-autoconfigure", version.ref = "logbook" }
 
 # micrometer
 micrometer-core = { group = "io.micrometer", name = "micrometer-core", version.ref = "micrometer" }
@@ -44,7 +41,6 @@ micrometer-core = { group = "io.micrometer", name = "micrometer-core", version.r
 # testing
 spring-boot-starter-test = { group = "org.springframework.boot", name = "spring-boot-starter-test" }
 reactor-test = { group = "io.projectreactor", name = "reactor-test", version.ref = "reactor" }
-wiremock-standlone = { group = "org.wiremock", name = "wiremock-standalone", version.ref = "wiremock" }
 junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junit" }
 junit-platform-launcher = { group = "org.junit.platform", name = "junit-platform-launcher", version.ref = "junit" }
 assertk-jvm = { group = "com.willowtreeapps.assertk", name = "assertk-jvm", version.ref = "assertk" }

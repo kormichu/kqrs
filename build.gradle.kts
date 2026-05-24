@@ -78,49 +78,6 @@ subprojects {
         }
     }
 
-    sourceSets {
-        create("integration") {
-            kotlin {
-                srcDir("src/integration/kotlin")
-            }
-            resources {
-                srcDir("src/integration/resources")
-            }
-            compileClasspath += sourceSets.main.get().output + sourceSets.test.get().output
-            runtimeClasspath += sourceSets.main.get().output + sourceSets.test.get().output
-        }
-    }
-
-    configurations {
-        val integrationImplementation by getting {
-            extendsFrom(configurations.testImplementation.get())
-        }
-        val integrationRuntimeOnly by getting {
-            extendsFrom(configurations.testRuntimeOnly.get())
-        }
-    }
-
-    val integrationTest = tasks.register<Test>(
-        "integrationTest"
-    ) {
-        description = "Runs integration tests."
-        group = "verification"
-
-        testClassesDirs = sourceSets["integration"].output.classesDirs
-        classpath = sourceSets["integration"].runtimeClasspath
-
-        shouldRunAfter("test")
-        useJUnitPlatform()
-    }
-
-    tasks.check {
-        dependsOn(integrationTest)
-    }
-
-    tasks.named<Copy>("processIntegrationResources") {
-        duplicatesStrategy = DuplicatesStrategy.INCLUDE
-    }
-
     tasks.withType<Test> {
         useJUnitPlatform()
     }
@@ -140,13 +97,6 @@ subprojects {
     dependencies {
         testImplementation("org.junit.jupiter:junit-jupiter")
         testRuntimeOnly(rootProject.libs.junit.platform.launcher)
-    }
-}
-
-idea {
-    module {
-        testSources.from(file("src/integration/kotlin"))
-        testResources.from(file("src/integration/resources"))
     }
 }
 

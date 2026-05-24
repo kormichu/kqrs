@@ -7,7 +7,7 @@ import com.kormichu.kqrs.spring.SpringBeansHelper
 import org.springframework.context.ApplicationContext
 import kotlin.reflect.KClass
 
-internal class SpringEventHandlerStorage(
+class SpringEventHandlerStorage(
     applicationContext: ApplicationContext
 ) : EventHandlerStorage {
     private val handlersMap = SpringBeansHelper.getListHandlers(

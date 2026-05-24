@@ -2,6 +2,7 @@ package com.kormichu.kqrs
 
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
+import kotlin.reflect.KTypeParameter
 import kotlin.reflect.full.superclasses
 
 interface Handler<O : Any> {
@@ -19,7 +20,10 @@ interface Handler<O : Any> {
             supertype.classifier == getBaseHandlerClass()
         }?.arguments?.firstOrNull()?.type
 
-        if (directTypeArgument != null) {
+        // Only return the direct type argument if its classifier is a concrete class
+        // (not a TypeParameter), to avoid returning unresolved generic type parameters
+        // from intermediate generic interfaces
+        if (directTypeArgument != null && directTypeArgument.classifier !is KTypeParameter) {
             return directTypeArgument
         }
 
