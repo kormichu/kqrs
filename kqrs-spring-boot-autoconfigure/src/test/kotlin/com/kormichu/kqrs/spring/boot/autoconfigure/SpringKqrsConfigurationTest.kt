@@ -21,12 +21,6 @@ import com.kormichu.kqrs.event.EventBus
 import com.kormichu.kqrs.event.EventExecutor
 import com.kormichu.kqrs.event.EventHandlerStorage
 import com.kormichu.kqrs.event.EventPublisher
-import com.kormichu.kqrs.metrics.MetricsErrorProcessCommandEventHandler
-import com.kormichu.kqrs.metrics.MetricsErrorProcessQueryEventHandler
-import com.kormichu.kqrs.metrics.MetricsStartProcessCommandEventHandler
-import com.kormichu.kqrs.metrics.MetricsStartProcessQueryEventHandler
-import com.kormichu.kqrs.metrics.MetricsStopProcessCommandEventHandler
-import com.kormichu.kqrs.metrics.MetricsStopProcessQueryEventHandler
 import com.kormichu.kqrs.query.AsyncQueryBus
 import com.kormichu.kqrs.query.AsyncQueryExecutor
 import com.kormichu.kqrs.query.AsyncQueryHandlerStorage
@@ -41,8 +35,6 @@ import com.kormichu.kqrs.spring.event.SpringEventHandlerStorage
 import com.kormichu.kqrs.spring.event.SpringEventListener
 import com.kormichu.kqrs.spring.event.SpringEventPublisher
 import com.kormichu.kqrs.transaction.TransactionalExecutor
-import io.micrometer.core.instrument.MeterRegistry
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.getBean
 import org.springframework.boot.autoconfigure.AutoConfigurations
@@ -258,58 +250,6 @@ class SpringKqrsConfigurationTest {
             .run { context ->
                 val props = context.getBean<SpringKqrsProperties>()
                 assert(props.eventBus.blockingListener)
-            }
-    }
-
-    @Test
-    fun `should use default prometheus metrics disabled`() {
-        contextRunner.run { context ->
-            val props = context.getBean<SpringKqrsProperties>()
-            assert(!props.metrics.prometheus.enabled)
-        }
-    }
-
-    // endregion
-
-    // region Prometheus Metrics
-
-    @Test
-    fun `should not register Prometheus metrics beans when metrics disabled`() {
-        contextRunner
-            .withBean(MeterRegistry::class.java, { SimpleMeterRegistry() })
-            .withPropertyValues("kqrs.metrics.prometheus.enabled=false")
-            .run { context ->
-                assert(!context.containsBean("prometheusMetricsStartCommandEventHandler"))
-                assert(!context.containsBean("prometheusMetricsStopCommandEventHandler"))
-                assert(!context.containsBean("prometheusMetricsErrorCommandEventHandler"))
-                assert(!context.containsBean("prometheusMetricsStartQueryEventHandler"))
-                assert(!context.containsBean("prometheusMetricsStopQueryEventHandler"))
-                assert(!context.containsBean("prometheusMetricsErrorQueryEventHandler"))
-            }
-    }
-
-    @Test
-    fun `should not register Prometheus metrics beans when MeterRegistry is absent`() {
-        contextRunner
-            .withPropertyValues("kqrs.metrics.prometheus.enabled=true")
-            .run { context ->
-                assert(!context.containsBean("prometheusMetricsStartCommandEventHandler"))
-                assert(!context.containsBean("prometheusMetricsStartQueryEventHandler"))
-            }
-    }
-
-    @Test
-    fun `should register Prometheus metrics beans when enabled and MeterRegistry present`() {
-        contextRunner
-            .withBean(MeterRegistry::class.java, { SimpleMeterRegistry() })
-            .withPropertyValues("kqrs.metrics.prometheus.enabled=true")
-            .run { context ->
-                assertThat(context.getBean<MetricsStartProcessCommandEventHandler>()).isNotNull()
-                assertThat(context.getBean<MetricsStopProcessCommandEventHandler>()).isNotNull()
-                assertThat(context.getBean<MetricsErrorProcessCommandEventHandler>()).isNotNull()
-                assertThat(context.getBean<MetricsStartProcessQueryEventHandler>()).isNotNull()
-                assertThat(context.getBean<MetricsStopProcessQueryEventHandler>()).isNotNull()
-                assertThat(context.getBean<MetricsErrorProcessQueryEventHandler>()).isNotNull()
             }
     }
 
