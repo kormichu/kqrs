@@ -10,10 +10,11 @@ This library provides a complete CQRS implementation with:
 - Separate `EventPublisher` (Spring `ApplicationEventPublisher` bridge) and `EventBus` (direct handler dispatch)
 - Synchronous, asynchronous (coroutines), and reactive (Reactor) execution modes
 - IO-optimised async handler variants (`AsyncIOCommandHandler`, `AsyncIOQueryHandler`)
+- Built-in transactional handler variants via `TransactionalExecutor` (`TransactionalCommandHandler`, `AsyncTransactionalCommandHandler`, etc.)
 - Validation error handling with dedicated exception types and lifecycle events
 - MDC context propagation for logging and tracing
 - Optional Prometheus metrics integration
-- Paginated query support via `PaginatedListQuery`
+- Paginated query support via `SpringPaginatedListQuery`
 
 ## Conventions
 
@@ -24,6 +25,48 @@ This library provides a complete CQRS implementation with:
 - Repositories accept `EventPublisher` (not `EventBus`) for publishing aggregate events
 - IDs use UUID v7 by default for time-ordered identifiers
 - Validation errors throw `ValidationCommandHandlerException` or `ValidationQueryHandlerException` and emit `ValidationFailed*Event` lifecycle events (logged at INFO level), while unexpected errors emit `ErrorProcess*Event` (logged at ERROR level)
+
+## Modules
+
+The library is split into seven Gradle modules. Published artifacts use the coordinate `com.kormichu:kqrs-<module>`.
+
+| Module (artifact) | Description | Key dependencies |
+|--------------------|-------------|------------------|
+| `kqrs-core` | Core domain types: commands, queries, events, handlers, aggregates, repositories, dispatchers | `kotlin-reflect`, `kotlinx-coroutines-core`, `kotlinx-coroutines-slf4j`, `uuid-creator`, `slf4j-api` |
+| `kqrs-spring` | Spring integration: handler storages, event bridge, `SpringPaginatedListQuery`, `SpringTransactionalExecutor` | `kqrs-core`, `spring-context`, `spring-tx`, `spring-data-commons` |
+| `kqrs-reactor` | Reactive gateway (`ReactorKqrsGateway`) for Mono/Flux results | `kqrs-core`, `reactor-core` |
+| `kqrs-prometheus` | Prometheus metrics event handlers | `kqrs-core`, `micrometer-core` |
+| `kqrs-spring-boot-autoconfigure` | Spring Boot auto-configuration for core beans | `kqrs-spring`, `spring-boot-autoconfigure` |
+| `kqrs-spring-boot-reactor-autoconfigure` | Auto-configuration for `ReactorKqrsGateway` (conditional on `reactor.core.publisher.Mono` on classpath) | `kqrs-spring-boot-autoconfigure`, `kqrs-reactor`, `spring-boot-autoconfigure` |
+| `kqrs-spring-boot-prometheus-autoconfigure` | Auto-configuration for Prometheus metrics handlers (conditional on `MeterRegistry` bean + `kqrs.metrics.prometheus.enabled`) | `kqrs-spring-boot-autoconfigure`, `kqrs-prometheus`, `spring-boot-autoconfigure` |
+
+### Module dependency graph
+
+```
+kqrs-core
+├── kqrs-spring ──► kqrs-spring-boot-autoconfigure
+│                       ├── kqrs-spring-boot-reactor-autoconfigure ◄── kqrs-reactor
+│                       └── kqrs-spring-boot-prometheus-autoconfigure ◄── kqrs-prometheus
+├── kqrs-reactor
+└── kqrs-prometheus
+```
+
+### Gradle dependency
+
+For a Spring Boot application, add the auto-configuration module (it transitively brings in `kqrs-spring` and `kqrs-core`):
+
+```kotlin
+// build.gradle.kts
+dependencies {
+    implementation("com.kormichu:kqrs-spring-boot-autoconfigure:${kqrsVersion}")
+
+    // Optional — Reactor support
+    implementation("com.kormichu:kqrs-spring-boot-reactor-autoconfigure:${kqrsVersion}")
+
+    // Optional — Prometheus metrics
+    implementation("com.kormichu:kqrs-spring-boot-prometheus-autoconfigure:${kqrsVersion}")
+}
+```
 
 ## Instructions
 
@@ -48,7 +91,7 @@ kqrs:
 IDs are type-safe wrappers around primitive values:
 
 ```kotlin
-import com.kormichu.kqrs.domain.Id
+import com.kormichu.kqrs.Id
 import java.util.UUID
 
 data class UserId(override val value: UUID) : Id<UUID>(value)
@@ -69,10 +112,10 @@ val stringId: OrderId = Id.fromString("order-123")
 Commands represent operations that change application state:
 
 ```kotlin
-import com.kormichu.kqrs.domain.command.Command
-import com.kormichu.kqrs.domain.command.CommandHandler
-import com.kormichu.kqrs.domain.event.EventPublisher
-import com.kormichu.kqrs.domain.event.EventTag
+import com.kormichu.kqrs.command.Command
+import com.kormichu.kqrs.command.CommandHandler
+import com.kormichu.kqrs.event.EventPublisher
+import com.kormichu.kqrs.event.EventTag
 
 // Define a command with custom event tags for observability
 data class CreateUserCommand(
@@ -97,13 +140,13 @@ class CreateUserCommandHandler(
         )
 }
 
-// Execute via CqrsGateway
+// Execute via KqrsGateway
 @RestController
 @RequestMapping("/users")
-class UserController(private val cqrsGateway: CqrsGateway) {
+class UserController(private val kqrsGateway: KqrsGateway) {
     @PostMapping
     fun createUser(@RequestBody request: CreateUserRequest): CreateUserResponse =
-        cqrsGateway.dispatch(
+        kqrsGateway.dispatch(
             CreateUserCommand(name = request.name, email = request.email)
         ).let { CreateUserResponse(id = it.value) }
 }
@@ -114,8 +157,8 @@ class UserController(private val cqrsGateway: CqrsGateway) {
 Queries retrieve data without modifying state:
 
 ```kotlin
-import com.kormichu.kqrs.domain.query.Query
-import com.kormichu.kqrs.domain.query.QueryHandler
+import com.kormichu.kqrs.query.Query
+import com.kormichu.kqrs.query.QueryHandler
 
 // Define read model
 data class UserReadModel(val id: UserId, val name: String, val email: String)
@@ -133,23 +176,23 @@ class GetUserByIdQueryHandler(
             ?: throw UserNotFoundException(query.id)
 }
 
-// Execute via CqrsGateway
+// Execute via KqrsGateway
 @GetMapping("/{id}")
 fun getUserById(@PathVariable id: UUID): UserResponse =
-    cqrsGateway.query(GetUserByIdQuery(UserId(id))).toResponse()
+    kqrsGateway.query(GetUserByIdQuery(UserId(id))).toResponse()
 ```
 
 ### Paginated Queries
 
-For queries that return paginated results:
+For queries that return paginated results (requires `kqrs-spring`):
 
 ```kotlin
-import com.kormichu.kqrs.domain.query.PaginatedListQuery
+import com.kormichu.kqrs.spring.query.SpringPaginatedListQuery
 import org.springframework.data.domain.Pageable
 
 data class ListUsersQuery(
     override val pagination: Pageable
-) : PaginatedListQuery<Page<UserReadModel>>(pagination = pagination)
+) : SpringPaginatedListQuery<Page<UserReadModel>>(pagination = pagination)
 ```
 
 ### Aggregates and Domain Events
@@ -157,10 +200,10 @@ data class ListUsersQuery(
 Aggregates encapsulate domain logic and emit events:
 
 ```kotlin
-import com.kormichu.kqrs.domain.AggregateRoot
-import com.kormichu.kqrs.domain.event.AggregateEvent
-import com.kormichu.kqrs.domain.event.EventPublisher
-import com.kormichu.kqrs.domain.repository.Repository
+import com.kormichu.kqrs.AggregateRoot
+import com.kormichu.kqrs.event.AggregateEvent
+import com.kormichu.kqrs.event.EventPublisher
+import com.kormichu.kqrs.repository.Repository
 
 // Define aggregate events
 data class UserCreatedEvent(
@@ -209,8 +252,8 @@ userRepository.saveAndPublishEvents(user, eventPublisher)
 Handle events using the `EventHandler` interface:
 
 ```kotlin
-import com.kormichu.kqrs.domain.event.EventHandler
-import com.kormichu.kqrs.domain.event.EventPublisher
+import com.kormichu.kqrs.event.EventHandler
+import com.kormichu.kqrs.event.EventPublisher
 
 // Define an event handler as a Spring bean (supports suspend functions)
 @Component
@@ -255,8 +298,8 @@ class StubHandler : NoOpEventHandler<UserCreatedEvent>()
 The library distinguishes validation errors from unexpected errors in lifecycle events:
 
 ```kotlin
-import com.kormichu.kqrs.domain.command.ValidationCommandHandlerException
-import com.kormichu.kqrs.domain.query.ValidationQueryHandlerException
+import com.kormichu.kqrs.command.ValidationCommandHandlerException
+import com.kormichu.kqrs.query.ValidationQueryHandlerException
 
 // Define a validation exception for commands
 class UserAlreadyExistsException(email: String) :
@@ -286,13 +329,71 @@ class CreateUserCommandHandler(
 
 When a `ValidationCommandHandlerException` is thrown, the gateway emits a `ValidationFailedCommandEvent` (logged at INFO level) instead of an `ErrorProcessCommandEvent` (logged at ERROR level). The same applies to `ValidationQueryHandlerException` and `ValidationFailedQueryEvent`.
 
-### Saga Pattern
+### Transactional Handlers
 
-Use a long-running, stateful saga to coordinate multiple commands and compensate on failure. Model the saga as a Spring component that reacts to events, persists its state, and uses `CqrsGateway` to issue follow-up commands.
+The library provides built-in transactional handler interfaces that wrap handler execution in a transaction via `TransactionalExecutor`:
 
 ```kotlin
-import com.kormichu.kqrs.domain.event.EventHandler
-import com.kormichu.kqrs.domain.CqrsGateway
+import com.kormichu.kqrs.command.TransactionalCommandHandler
+import com.kormichu.kqrs.query.TransactionalQueryHandler
+import com.kormichu.kqrs.transaction.TransactionalExecutor
+
+// Synchronous transactional command handler
+@Component
+class CreateUserTransactionalHandler(
+    override val transactionalExecutor: TransactionalExecutor,
+    private val userRepository: UserRepository,
+    private val eventPublisher: EventPublisher
+) : TransactionalCommandHandler<CreateUserCommand, UserId> {
+    override fun handleInTransaction(command: CreateUserCommand): UserId =
+        userRepository.saveAndPublishEvents(
+            User.create(command.name, command.email),
+            eventPublisher
+        )
+}
+
+// Synchronous transactional query handler (read-only transaction)
+@Component
+class GetUserTransactionalHandler(
+    override val transactionalExecutor: TransactionalExecutor,
+    private val repository: UserReadModelRepository
+) : TransactionalQueryHandler<GetUserByIdQuery, UserReadModel> {
+    override fun handleInTransaction(query: GetUserByIdQuery): UserReadModel =
+        repository.findById(query.id) ?: throw UserNotFoundException(query.id)
+}
+
+// Async transactional command handler
+@Component
+class CreateUserAsyncTransactionalHandler(
+    override val transactionalExecutor: TransactionalExecutor,
+    private val userRepository: UserRepository,
+    private val eventPublisher: EventPublisher
+) : AsyncTransactionalCommandHandler<CreateUserCommand, UserId> {
+    override fun handleInTransaction(command: CreateUserCommand): UserId =
+        userRepository.saveAndPublishEvents(
+            User.create(command.name, command.email),
+            eventPublisher
+        )
+}
+
+// Async IO transactional variants are also available:
+// - AsyncIOTransactionalCommandHandler
+// - AsyncIOTransactionalQueryHandler
+```
+
+The `TransactionalExecutor` interface defines:
+- `execute(block)` — wraps in a read-write transaction
+- `executeReadOnly(block)` — wraps in a read-only transaction
+
+`SpringTransactionalExecutor` is the default implementation using Spring `@Transactional`.
+
+### Saga Pattern
+
+Use a long-running, stateful saga to coordinate multiple commands and compensate on failure. Model the saga as a Spring component that reacts to events, persists its state, and uses `KqrsGateway` to issue follow-up commands.
+
+```kotlin
+import com.kormichu.kqrs.event.EventHandler
+import com.kormichu.kqrs.KqrsGateway
 
 // Example saga state
 enum class OrderSagaStatus { STARTED, PAYMENT_RESERVED, INVENTORY_RESERVED, COMPLETED, COMPENSATING, FAILED }
@@ -311,34 +412,34 @@ interface OrderSagaRepository {
 // Saga handlers as EventHandler implementations
 @Component
 class OrderPlacedSagaHandler(
-    private val cqrsGateway: CqrsGateway,
+    private val kqrsGateway: KqrsGateway,
     private val sagaRepository: OrderSagaRepository
 ) : EventHandler<OrderPlacedEvent> {
     override suspend fun handle(event: OrderPlacedEvent) {
         sagaRepository.save(OrderSagaState(event.orderId, OrderSagaStatus.STARTED))
-        cqrsGateway.dispatchAsync(ReservePaymentCommand(event.orderId))
+        kqrsGateway.dispatchAsync(ReservePaymentCommand(event.orderId))
     }
 }
 
 @Component
 class PaymentReservedSagaHandler(
-    private val cqrsGateway: CqrsGateway,
+    private val kqrsGateway: KqrsGateway,
     private val sagaRepository: OrderSagaRepository
 ) : EventHandler<PaymentReservedEvent> {
     override suspend fun handle(event: PaymentReservedEvent) {
         sagaRepository.save(OrderSagaState(event.orderId, OrderSagaStatus.PAYMENT_RESERVED))
-        cqrsGateway.dispatchAsync(ReserveInventoryCommand(event.orderId))
+        kqrsGateway.dispatchAsync(ReserveInventoryCommand(event.orderId))
     }
 }
 
 @Component
 class InventoryReservedSagaHandler(
-    private val cqrsGateway: CqrsGateway,
+    private val kqrsGateway: KqrsGateway,
     private val sagaRepository: OrderSagaRepository
 ) : EventHandler<InventoryReservedEvent> {
     override suspend fun handle(event: InventoryReservedEvent) {
         sagaRepository.save(OrderSagaState(event.orderId, OrderSagaStatus.INVENTORY_RESERVED))
-        cqrsGateway.dispatchAsync(ConfirmOrderCommand(event.orderId))
+        kqrsGateway.dispatchAsync(ConfirmOrderCommand(event.orderId))
     }
 }
 
@@ -353,13 +454,13 @@ class OrderConfirmedSagaHandler(
 
 @Component
 class ReservationFailedSagaHandler(
-    private val cqrsGateway: CqrsGateway,
+    private val kqrsGateway: KqrsGateway,
     private val sagaRepository: OrderSagaRepository
 ) : EventHandler<ReservationFailedEvent> {
     override suspend fun handle(event: ReservationFailedEvent) {
         sagaRepository.save(OrderSagaState(event.orderId, OrderSagaStatus.COMPENSATING, event.reason))
-        cqrsGateway.dispatchAsync(ReleasePaymentCommand(event.orderId))
-        cqrsGateway.dispatchAsync(ReleaseInventoryCommand(event.orderId))
+        kqrsGateway.dispatchAsync(ReleasePaymentCommand(event.orderId))
+        kqrsGateway.dispatchAsync(ReleaseInventoryCommand(event.orderId))
         sagaRepository.save(OrderSagaState(event.orderId, OrderSagaStatus.FAILED, event.reason))
     }
 }
@@ -377,9 +478,9 @@ Key practices:
 The library automatically emits lifecycle events for monitoring via `EventPublisher`:
 
 ```kotlin
-import com.kormichu.kqrs.domain.command.*
-import com.kormichu.kqrs.domain.query.*
-import com.kormichu.kqrs.domain.event.EventHandler
+import com.kormichu.kqrs.command.*
+import com.kormichu.kqrs.query.*
+import com.kormichu.kqrs.event.EventHandler
 
 // Command lifecycle events:
 // - StartProcessCommandEvent: emitted when command processing begins
@@ -420,13 +521,13 @@ class CommandErrorMetricsHandler : EventHandler<ErrorProcessCommandEvent<*>> {
 For non-blocking operations using Kotlin coroutines:
 
 ```kotlin
-import com.kormichu.kqrs.domain.command.AsyncCommandHandler
-import com.kormichu.kqrs.domain.command.AsyncIOCommandHandler
-import com.kormichu.kqrs.domain.query.AsyncQueryHandler
-import com.kormichu.kqrs.domain.query.AsyncIOQueryHandler
-import com.kormichu.kqrs.domain.repository.AsyncRepository
-import com.kormichu.kqrs.domain.repository.AsyncReadModelRepository
-import com.kormichu.kqrs.domain.event.EventPublisher
+import com.kormichu.kqrs.command.AsyncCommandHandler
+import com.kormichu.kqrs.command.AsyncIOCommandHandler
+import com.kormichu.kqrs.query.AsyncQueryHandler
+import com.kormichu.kqrs.query.AsyncIOQueryHandler
+import com.kormichu.kqrs.repository.AsyncRepository
+import com.kormichu.kqrs.repository.AsyncReadModelRepository
+import com.kormichu.kqrs.event.EventPublisher
 
 // Async repository interfaces
 interface AsyncUserRepository : AsyncRepository<User, UserId>
@@ -484,36 +585,36 @@ class CustomDispatcherHandler : AsyncCommandHandler<MyCommand, MyResult> {
 // Execute in controller using suspend functions
 @RestController
 @RequestMapping("/users")
-class UserController(private val cqrsGateway: CqrsGateway) {
+class UserController(private val kqrsGateway: KqrsGateway) {
     @PostMapping
     suspend fun createUser(@RequestBody request: CreateUserRequest): CreateUserResponse =
-        cqrsGateway.dispatchAsync(
+        kqrsGateway.dispatchAsync(
             CreateUserCommand(request.name, request.email)
         ).let { CreateUserResponse(id = it.value) }
 
     @GetMapping("/{id}")
     suspend fun getUserById(@PathVariable id: UUID): UserResponse =
-        cqrsGateway.queryAsync(GetUserByIdQuery(UserId(id))).toResponse()
+        kqrsGateway.queryAsync(GetUserByIdQuery(UserId(id))).toResponse()
 }
 ```
 
-### Transactional Command Handling
+### Transactional Command Handling with Async Handlers
 
-Spring's `@Transactional` annotation relies on proxy-based AOP, which does not work directly on `suspend` functions. When an `AsyncCommandHandler` needs transactional semantics, extract the transactional logic into a separate Spring bean with a regular (non-suspend) function annotated with `@Transactional`. The handler then calls that bean inside a coroutine context switch.
+When an `AsyncCommandHandler` needs transactional semantics without using `AsyncTransactionalCommandHandler`, you can extract the transactional logic into a separate Spring bean with a regular (non-suspend) function annotated with `@Transactional`. The handler then calls that bean inside a coroutine context switch.
 
 ```kotlin
 import kotlinx.coroutines.withContext
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
-import com.kormichu.kqrs.domain.command.AsyncCommandHandler
-import com.kormichu.kqrs.domain.coroutines.CoroutineDispatchers
-import com.kormichu.kqrs.domain.event.EventPublisher
+import com.kormichu.kqrs.command.AsyncCommandHandler
+import com.kormichu.kqrs.AsyncDispatchers
+import com.kormichu.kqrs.event.EventPublisher
 
 // The async handler delegates to a transactional executor inside an IO context
 @Component
 class CreateCategoryCommandHandler(
     private val executor: CreateCategoryTransactionalExecutor,
-    private val dispatchers: CoroutineDispatchers
+    private val dispatchers: AsyncDispatchers
 ) : AsyncCommandHandler<CreateCategoryCommand, StoreCategoryId> {
     override suspend fun handle(command: CreateCategoryCommand): StoreCategoryId =
         withContext(dispatchers.commandIOExecutorContext()) {
@@ -545,13 +646,14 @@ Key practices:
 - Use `withContext(dispatchers.commandIOExecutorContext())` (or `queryIOExecutorContext()`) to bridge from the coroutine world to the blocking transactional call on an IO dispatcher.
 - The transactional executor can use `Repository.saveAndPublishEvents(aggregate, eventPublisher)` so that domain events are published after the entity is persisted within the same transaction boundary.
 - The same pattern applies to queries: extract a `*TransactionalExecutor` for `AsyncQueryHandler` when read transactions are needed.
+- Alternatively, use the built-in `AsyncTransactionalCommandHandler` / `AsyncIOTransactionalCommandHandler` interfaces which handle this automatically via `TransactionalExecutor`.
 
 ### Reactor Usage
 
 For reactive streams using Project Reactor (optional dependency):
 
 ```kotlin
-import com.kormichu.kqrs.infrastructure.reactor.ReactorCqrsGateway
+import com.kormichu.kqrs.reactor.ReactorKqrsGateway
 import reactor.core.publisher.Mono
 import reactor.core.publisher.Flux
 
@@ -583,19 +685,19 @@ class GetUserByIdReactiveHandler(
             .switchIfEmpty(Mono.error(UserNotFoundException(query.id)))
 }
 
-// Use ReactorCqrsGateway for Mono/Flux results
+// Use ReactorKqrsGateway for Mono/Flux results
 @RestController
 @RequestMapping("/users")
-class UserController(private val cqrsGateway: ReactorCqrsGateway) {
+class UserController(private val kqrsGateway: ReactorKqrsGateway) {
     @PostMapping
     fun createUser(@RequestBody request: CreateUserRequest): Mono<CreateUserResponse> =
-        cqrsGateway.dispatch(
+        kqrsGateway.dispatch(
             CreateUserCommand(request.name, request.email)
         ).map { CreateUserResponse(id = it.value) }
 
     @GetMapping("/{id}")
     fun getUserById(@PathVariable id: UUID): Mono<UserResponse> =
-        cqrsGateway.query(GetUserByIdQuery(UserId(id)))
+        kqrsGateway.query(GetUserByIdQuery(UserId(id)))
             .map { it.toResponse() }
 
     // Flux is also supported for streaming results
@@ -608,8 +710,8 @@ class UserController(private val cqrsGateway: ReactorCqrsGateway) {
 Override automatic naming:
 
 ```kotlin
-import com.kormichu.kqrs.domain.command.CommandName
-import com.kormichu.kqrs.domain.query.QueryName
+import com.kormichu.kqrs.command.CommandName
+import com.kormichu.kqrs.query.QueryName
 
 class CreateUserCommandName : CommandName("user.create")
 class GetUserQueryName : QueryName("user.get-by-id")
@@ -634,17 +736,20 @@ The library automatically configures the following beans when included as a depe
 
 | Bean | Description |
 |------|-------------|
-| `CqrsGateway` | Main entry point for dispatching commands and queries (extends `BaseCqrsGateway`) |
-| `CommandBus` | Routes commands to appropriate handlers (`DefaultCommandBus`) |
-| `QueryBus` | Routes queries to appropriate handlers (`DefaultQueryBus`) |
+| `KqrsGateway` | Main entry point for dispatching commands and queries (`DefaultKqrsGateway` implements both `KqrsGateway` and `AsyncKqrsGateway`) |
+| `CommandBus` | Routes commands to synchronous handlers (`DefaultCommandBus`) |
+| `AsyncCommandBus` | Routes commands to async handlers (`DefaultAsyncCommandBus`) |
+| `QueryBus` | Routes queries to synchronous handlers (`DefaultQueryBus`) |
+| `AsyncQueryBus` | Routes queries to async handlers (`DefaultAsyncQueryBus`) |
 | `EventBus` | Dispatches events directly to `EventHandler` beans (`DefaultEventBus`) |
 | `EventPublisher` | Publishes events via Spring's `ApplicationEventPublisher` (`SpringEventPublisher`) |
-| `CoroutineDispatchers` | Provides coroutine dispatchers for async command, query, and event handling |
+| `AsyncDispatchers` | Provides coroutine dispatchers for async command, query, and event handling (`DefaultAsyncDispatchers`) |
 | `CommandExecutor` / `AsyncCommandExecutor` | Execute commands via sync / coroutine handlers |
 | `QueryExecutor` / `AsyncQueryExecutor` | Execute queries via sync / coroutine handlers |
 | `EventExecutor` | Executes event handlers (blocking or non-blocking based on config) |
-| `SpringEventListener` | Bridges Spring `@EventListener` to `EventBus.dispatch()` |
-| `ReactorCqrsGateway` | Reactive gateway (only when `reactor-core` is on classpath) |
+| `SpringEventListener` | Bridges Spring events to `EventBus.dispatch()` (implements `SmartApplicationListener`) |
+| `TransactionalExecutor` | Transaction wrapper (`SpringTransactionalExecutor`) |
+| `ReactorKqrsGateway` | Reactive gateway (only when `reactor-core` is on classpath) |
 
 ### Handler Discovery
 
@@ -652,17 +757,23 @@ Handlers are automatically discovered via Spring's `ApplicationContext`. Any Spr
 
 ```kotlin
 // Command handlers
-interface CommandHandler<C : Command<R>, R>          // Synchronous
-interface AsyncCommandHandler<C : Command<R>, R>     // Coroutine-based
-interface AsyncIOCommandHandler<C : Command<R>, R>   // Coroutine-based, IO dispatcher
+interface CommandHandler<C : Command<R>, R>                          // Synchronous
+interface TransactionalCommandHandler<C : Command<R>, R>             // Synchronous, transactional
+interface AsyncCommandHandler<C : Command<R>, R>                     // Coroutine-based
+interface AsyncIOCommandHandler<C : Command<R>, R>                   // Coroutine-based, IO dispatcher
+interface AsyncTransactionalCommandHandler<C : Command<R>, R>        // Coroutine-based, transactional
+interface AsyncIOTransactionalCommandHandler<C : Command<R>, R>      // Coroutine-based, IO dispatcher, transactional
 
 // Query handlers
-interface QueryHandler<Q : Query<R>, R>              // Synchronous
-interface AsyncQueryHandler<Q : Query<R>, R>         // Coroutine-based
-interface AsyncIOQueryHandler<Q : Query<R>, R>       // Coroutine-based, IO dispatcher
+interface QueryHandler<Q : Query<R>, R>                              // Synchronous
+interface TransactionalQueryHandler<Q : Query<R>, R>                 // Synchronous, transactional
+interface AsyncQueryHandler<Q : Query<R>, R>                         // Coroutine-based
+interface AsyncIOQueryHandler<Q : Query<R>, R>                       // Coroutine-based, IO dispatcher
+interface AsyncTransactionalQueryHandler<Q : Query<R>, R>            // Coroutine-based, transactional
+interface AsyncIOTransactionalQueryHandler<Q : Query<R>, R>          // Coroutine-based, IO dispatcher, transactional
 
 // Event handlers
-interface EventHandler<E : Event>                    // Coroutine-based (always async)
+interface EventHandler<E : Event>                                    // Coroutine-based (always async)
 ```
 
 All handler interfaces extend the common `Handler<O>` interface which provides automatic type parameter resolution via `objectClass`.
@@ -688,7 +799,7 @@ interface EventBus {
 }
 
 // Flow: EventPublisher.publish() → Spring ApplicationEventPublisher
-//       → SpringEventListener (@EventListener) → EventBus.dispatch()
+//       → SpringEventListener (SmartApplicationListener) → EventBus.dispatch()
 //       → EventHandler.handle()
 
 // DefaultEventBus dispatches to all matching EventHandler beans
@@ -703,11 +814,8 @@ class SpringEventPublisher(
 ) : EventPublisher
 
 // SpringEventListener bridges Spring events back to EventBus
-class SpringEventListener(private val eventBus: EventBus) {
-    @EventListener
-    fun <E : Event> handle(event: E) {
-        eventBus.dispatch(event)
-    }
+class SpringEventListener(private val eventBus: EventBus) : SmartApplicationListener {
+    // Filters for PayloadApplicationEvent<Event> and dispatches to EventBus
 }
 ```
 
@@ -736,22 +844,22 @@ class AuditUserCreationHandler : EventHandler<UserCreatedEvent> {
 ### Configuration Properties
 
 ```kotlin
-// SpringCqrsProperties
+// SpringKqrsProperties
 @ConfigurationProperties("kqrs")
-data class SpringCqrsProperties(
-    val eventBus: SpringCqrsEventBusProperties,
-    val metrics: SpringCqrsMetricsProperties
+data class SpringKqrsProperties(
+    val eventBus: SpringKqrsEventBusProperties,
+    val metrics: SpringKqrsMetricsProperties
 )
 
-data class SpringCqrsEventBusProperties(
+data class SpringKqrsEventBusProperties(
     val blockingListener: Boolean  // default: false
 )
 
-data class SpringCqrsMetricsProperties(
-    val prometheus: SpringCqrsMetricsPrometheusProperties
+data class SpringKqrsMetricsProperties(
+    val prometheus: SpringKqrsMetricsPrometheusProperties
 )
 
-data class SpringCqrsMetricsPrometheusProperties(
+data class SpringKqrsMetricsPrometheusProperties(
     val enabled: Boolean  // default: false
 )
 ```
@@ -774,8 +882,8 @@ When `kqrs.metrics.prometheus.enabled=true` and a `MeterRegistry` bean is presen
 // marker interfaces for handler type resolution.
 
 // Metrics recorded:
-// - cqrs_command_start, cqrs_command_stop, cqrs_command_error, cqrs_command_duration
-// - cqrs_query_start, cqrs_query_stop, cqrs_query_error, cqrs_query_duration
+// - kqrs_command_start, kqrs_command_stop, kqrs_command_error, kqrs_command_duration
+// - kqrs_query_start, kqrs_query_stop, kqrs_query_error, kqrs_query_duration
 // - Event tags are included as metric labels plus "command" or "query"
 ```
 
@@ -785,11 +893,11 @@ You can override any auto-configured bean:
 
 ```kotlin
 @Configuration
-class CustomCqrsConfiguration {
-    // Override the default CoroutineDispatchers
+class CustomKqrsConfiguration {
+    // Override the default AsyncDispatchers
     @Bean
-    fun coroutineBusDispatchers(): CoroutineDispatchers =
-        DefaultCoroutineDispatchers(
+    fun kqrsCoroutineBusDispatchers(): AsyncDispatchers =
+        DefaultAsyncDispatchers(
             defaultCommandIODispatcher = Dispatchers.IO,
             defaultQueryIODispatcher = Dispatchers.IO,
             defaultEventDispatcher = Dispatchers.IO  // Use IO dispatcher for events
@@ -869,15 +977,15 @@ class UserCreatedNotificationHandler(
 // 6. REST Controller
 @RestController
 @RequestMapping("/users")
-class UserController(private val cqrsGateway: CqrsGateway) {
+class UserController(private val kqrsGateway: KqrsGateway) {
     @PostMapping
     fun create(@RequestBody req: CreateUserRequest) =
-        cqrsGateway.dispatch(CreateUserCommand(req.name, req.email))
+        kqrsGateway.dispatch(CreateUserCommand(req.name, req.email))
             .let { CreateUserResponse(it.value) }
 
     @GetMapping("/{id}")
     fun getById(@PathVariable id: UUID) =
-        cqrsGateway.query(GetUserByIdQuery(UserId(id))).toResponse()
+        kqrsGateway.query(GetUserByIdQuery(UserId(id))).toResponse()
 }
 ```
 
@@ -887,7 +995,7 @@ class UserController(private val cqrsGateway: CqrsGateway) {
 - Each command/query type must have exactly one handler
 - Multiple event handlers can subscribe to the same event type
 - Reactor support requires `reactor-core` on the classpath
-- `ReactorCqrsGateway` is only registered when Reactor is available
+- `ReactorKqrsGateway` is only registered when Reactor is available
 - Repositories accept `EventPublisher` (not `EventBus`) for publishing aggregate events
 
 ## Debugging
