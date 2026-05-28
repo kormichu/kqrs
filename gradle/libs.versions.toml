@@ -1,0 +1,59 @@
+[versions]
+kotlin = "2.3.0"
+java = "21"
+axionReleasePlugin = "1.21.1"
+springBoot = "3.5.10"
+springDependency = "1.1.7"
+assertk = "0.28.1"
+mockk= "1.14.9"
+wiremock = "3.13.2"
+detekt = "1.23.8"
+reactor = "3.8.2"
+slf4j = "2.0.17"
+kotlinxCoroutines = "1.10.2"
+uuidCreator = "6.1.1"
+junit = "6.0.3"
+micrometer = "1.16.5"
+
+[libraries]
+# kotlin
+kotlin-reflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect", version.ref = "kotlin" }
+
+# kotlinx
+kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
+kotlinx-coroutines-slf4j = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-slf4j", version.ref = "kotlinxCoroutines" }
+
+# spring boot
+spring-boot-dependencies = { group = "org.springframework.boot", name = "spring-boot-dependencies", version.ref = "springBoot" }
+spring-boot-autoconfigure = { group = "org.springframework.boot", name = "spring-boot-autoconfigure" }
+
+# spring framework
+spring-context = { group = "org.springframework", name = "spring-context" }
+spring-tx = { group = "org.springframework", name = "spring-tx" }
+spring-data-commons = { group = "org.springframework.data", name = "spring-data-commons" }
+
+# reactor
+reactor-core = { group = "io.projectreactor", name = "reactor-core", version.ref = "reactor" }
+
+# micrometer
+micrometer-core = { group = "io.micrometer", name = "micrometer-core", version.ref = "micrometer" }
+
+# testing
+spring-boot-starter-test = { group = "org.springframework.boot", name = "spring-boot-starter-test" }
+reactor-test = { group = "io.projectreactor", name = "reactor-test", version.ref = "reactor" }
+junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junit" }
+junit-platform-launcher = { group = "org.junit.platform", name = "junit-platform-launcher", version.ref = "junit" }
+assertk-jvm = { group = "com.willowtreeapps.assertk", name = "assertk-jvm", version.ref = "assertk" }
+mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
+kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
+
+# other
+slf4j-api = { group = "org.slf4j", name = "slf4j-api", version.ref = "slf4j" }
+uuid-creator = { group = "com.github.f4b6a3", name = "uuid-creator", version.ref = "uuidCreator" }
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-spring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
+axion-release = { id = "pl.allegro.tech.build.axion-release", version.ref = "axionReleasePlugin" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+spring-dependency = { id = "io.spring.dependency-management", version.ref = "springDependency" }
