@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.detekt)
     alias(libs.plugins.spring.dependency)
     `maven-publish`
+    signing
     idea
 }
 
@@ -36,8 +37,14 @@ allprojects {
 }
 subprojects {
     plugins.apply("maven-publish")
+    plugins.apply("signing")
     plugins.apply("pl.allegro.tech.build.axion-release")
     plugins.apply("io.spring.dependency-management")
+
+    java {
+        withJavadocJar()
+        withSourcesJar()
+    }
 
     publishing {
         repositories {
@@ -49,22 +56,67 @@ subprojects {
                     password = System.getenv("TOKEN") ?: project.findProperty("gpr.key") as String?
                 }
             }
-        }
-
-        publications {
-            register<MavenPublication>("gpr") {
-                from(components["java"])
-
-                // Optional: customize artifact IDs
-                artifactId = "kqrs-${project.name}"
-
-                // Add proper POM information if needed
-                pom {
-                    name.set(project.name)
-                    description.set("${project.name} module for KQRS")
+            maven {
+                name = "MavenCentral"
+                url = if (project.version.toString().endsWith("-SNAPSHOT")) {
+                    uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
+                } else {
+                    uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+                }
+                credentials {
+                    username = System.getenv("OSSRH_USERNAME") ?: project.findProperty("ossrh.username") as String?
+                    password = System.getenv("OSSRH_PASSWORD") ?: project.findProperty("ossrh.password") as String?
                 }
             }
         }
+
+        publications {
+            register<MavenPublication>("mavenJava") {
+                from(components["java"])
+
+                artifactId = project.name
+
+                pom {
+                    name.set(project.name)
+                    description.set("${project.name} module for KQRS - Kotlin CQRS framework")
+                    url.set("https://github.com/kormichu/kqrs")
+
+                    licenses {
+                        license {
+                            name.set("The Apache License, Version 2.0")
+                            url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+                        }
+                    }
+
+                    developers {
+                        developer {
+                            id.set("kormichu")
+                            name.set("kormichu")
+                            url.set("https://github.com/kormichu")
+                        }
+                    }
+
+                    scm {
+                        connection.set("scm:git:git://github.com/kormichu/kqrs.git")
+                        developerConnection.set("scm:git:ssh://github.com/kormichu/kqrs.git")
+                        url.set("https://github.com/kormichu/kqrs")
+                    }
+                }
+            }
+        }
+    }
+
+    signing {
+        val signingKey = System.getenv("GPG_SIGNING_KEY") ?: project.findProperty("signing.key") as String?
+        val signingPassword = System.getenv("GPG_SIGNING_PASSWORD") ?: project.findProperty("signing.password") as String?
+        if (signingKey != null && signingPassword != null) {
+            useInMemoryPgpKeys(signingKey, signingPassword)
+        }
+        sign(publishing.publications["mavenJava"])
+    }
+
+    tasks.withType<Sign>().configureEach {
+        isRequired = System.getenv("GPG_SIGNING_KEY") != null || project.hasProperty("signing.key")
     }
 
     pluginManager.withPlugin("java") {
