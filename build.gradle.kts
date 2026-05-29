@@ -49,14 +49,6 @@ subprojects {
     publishing {
         repositories {
             maven {
-                name = "GitHubPackages"
-                url = uri("https://maven.pkg.github.com/kormichu/kqrs")
-                credentials {
-                    username = System.getenv("USERNAME") ?: project.findProperty("gpr.user") as String?
-                    password = System.getenv("TOKEN") ?: project.findProperty("gpr.key") as String?
-                }
-            }
-            maven {
                 name = "MavenCentral"
                 url = if (project.version.toString().endsWith("-SNAPSHOT")) {
                     uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
@@ -83,8 +75,8 @@ subprojects {
 
                     licenses {
                         license {
-                            name.set("The Apache License, Version 2.0")
-                            url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+                            name.set("MIT License")
+                            url.set("https://opensource.org/licenses/MIT")
                         }
                     }
 

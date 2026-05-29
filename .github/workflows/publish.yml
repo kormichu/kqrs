@@ -13,38 +13,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  publish-github:
-    name: Publish to GitHub Packages
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Set up Java
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-          cache: 'gradle'
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v5
-
-      - name: Build with Gradle
-        run: ./gradlew clean build --no-daemon
-
-      - name: Publish to GitHub Packages
-        run: ./gradlew publishMavenJavaPublicationToGitHubPackagesRepository --no-daemon
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          USERNAME: ${{ github.actor }}
-          TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   publish-maven-central:
     name: Publish to Maven Central
     runs-on: ubuntu-latest
