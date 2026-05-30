@@ -8,3 +8,6 @@ include("kqrs-spring-boot-autoconfigure")
 include("kqrs-spring-boot-reactor-autoconfigure")
 
 include("kqrs-spring-boot-prometheus-autoconfigure")
+
+include("kqrs-opentelemetry")
+include("kqrs-spring-boot-opentelemetry-autoconfigure")
