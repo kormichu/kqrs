@@ -23,11 +23,14 @@ data class SpringKqrsEventBusProperties(
 
 data class SpringKqrsMetricsProperties(
     @NestedConfigurationProperty
-    val prometheus: SpringKqrsMetricsPrometheusProperties = SpringKqrsMetricsPrometheusProperties.DEFAULT
+    val prometheus: SpringKqrsMetricsPrometheusProperties = SpringKqrsMetricsPrometheusProperties.DEFAULT,
+    @NestedConfigurationProperty
+    val opentelemetry: SpringKqrsMetricsOpenTelemetryProperties = SpringKqrsMetricsOpenTelemetryProperties.DEFAULT
 ) {
     companion object {
         val DEFAULT = SpringKqrsMetricsProperties(
             prometheus = SpringKqrsMetricsPrometheusProperties.DEFAULT,
+            opentelemetry = SpringKqrsMetricsOpenTelemetryProperties.DEFAULT,
         )
     }
 }
@@ -37,6 +40,16 @@ data class SpringKqrsMetricsPrometheusProperties(
 ) {
     companion object {
         val DEFAULT = SpringKqrsMetricsPrometheusProperties(
+            enabled = false,
+        )
+    }
+}
+
+data class SpringKqrsMetricsOpenTelemetryProperties(
+    val enabled: Boolean
+) {
+    companion object {
+        val DEFAULT = SpringKqrsMetricsOpenTelemetryProperties(
             enabled = false,
         )
     }
