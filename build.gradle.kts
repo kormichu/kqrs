@@ -6,7 +6,6 @@ plugins {
     alias(libs.plugins.axion.release)
     alias(libs.plugins.detekt)
     alias(libs.plugins.spring.dependency)
-    alias(libs.plugins.nmcp)
     `maven-publish`
     signing
     idea
@@ -41,20 +40,12 @@ subprojects {
     plugins.apply("signing")
     plugins.apply("pl.allegro.tech.build.axion-release")
     plugins.apply("io.spring.dependency-management")
-    plugins.apply("com.gradleup.nmcp")
 
     java {
         withJavadocJar()
         withSourcesJar()
     }
 
-    nmcp {
-        centralPortal {
-            username = System.getenv("OSSRH_USERNAME") ?: project.findProperty("ossrh.username") as String? ?: ""
-            password = System.getenv("OSSRH_PASSWORD") ?: project.findProperty("ossrh.password") as String? ?: ""
-            publishingType = "AUTOMATIC"
-        }
-    }
 
     configure<PublishingExtension> {
         publications {
@@ -138,5 +129,6 @@ subprojects {
         testRuntimeOnly(rootProject.libs.junit.platform.launcher)
     }
 }
+
 
 apply(from = rootProject.file("gradle/config/git/install-git-hooks.gradle"))

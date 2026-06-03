@@ -7,7 +7,6 @@ springDependency = "1.1.7"
 assertk = "0.28.1"
 mockk= "1.14.11"
 detekt = "1.23.8"
-nmcp = "0.1.5"
 reactor = "3.8.5"
 slf4j = "2.0.18"
 kotlinxCoroutines = "1.11.0"
@@ -57,4 +56,3 @@ kotlin-spring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotl
 axion-release = { id = "pl.allegro.tech.build.axion-release", version.ref = "axionReleasePlugin" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 spring-dependency = { id = "io.spring.dependency-management", version.ref = "springDependency" }
-nmcp = { id = "com.gradleup.nmcp", version.ref = "nmcp" }
