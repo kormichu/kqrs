@@ -1,4 +1,4 @@
-import org.gradle.kotlin.dsl.register
+import org.gradle.api.publish.PublishingExtension
 
 plugins {
     alias(libs.plugins.kotlin.jvm)
@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.axion.release)
     alias(libs.plugins.detekt)
     alias(libs.plugins.spring.dependency)
+    alias(libs.plugins.nmcp)
     `maven-publish`
     signing
     idea
@@ -40,28 +41,22 @@ subprojects {
     plugins.apply("signing")
     plugins.apply("pl.allegro.tech.build.axion-release")
     plugins.apply("io.spring.dependency-management")
+    plugins.apply("com.gradleup.nmcp")
 
     java {
         withJavadocJar()
         withSourcesJar()
     }
 
-    publishing {
-        repositories {
-            maven {
-                name = "MavenCentral"
-                url = if (project.version.toString().endsWith("-SNAPSHOT")) {
-                    uri("https://central.sonatype.com/repository/maven-snapshots/")
-                } else {
-                    uri("https://central.sonatype.com/repository/maven-releases/")
-                }
-                credentials {
-                    username = System.getenv("OSSRH_USERNAME") ?: project.findProperty("ossrh.username") as String?
-                    password = System.getenv("OSSRH_PASSWORD") ?: project.findProperty("ossrh.password") as String?
-                }
-            }
+    nmcp {
+        centralPortal {
+            username = System.getenv("OSSRH_USERNAME") ?: project.findProperty("ossrh.username") as String? ?: ""
+            password = System.getenv("OSSRH_PASSWORD") ?: project.findProperty("ossrh.password") as String? ?: ""
+            publishingType = "AUTOMATIC"
         }
+    }
 
+    configure<PublishingExtension> {
         publications {
             register<MavenPublication>("mavenJava") {
                 from(components["java"])
@@ -104,7 +99,7 @@ subprojects {
         if (signingKey != null && signingPassword != null) {
             useInMemoryPgpKeys(signingKey, signingPassword)
         }
-        sign(publishing.publications["mavenJava"])
+        sign(the<PublishingExtension>().publications["mavenJava"])
     }
 
     tasks.withType<Sign>().configureEach {
