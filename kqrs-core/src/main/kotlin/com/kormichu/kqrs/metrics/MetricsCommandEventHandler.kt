@@ -5,6 +5,7 @@ import com.kormichu.kqrs.command.CommandEvent
 import com.kormichu.kqrs.command.ErrorProcessCommandEvent
 import com.kormichu.kqrs.command.StartProcessCommandEvent
 import com.kormichu.kqrs.command.StopProcessCommandEvent
+import com.kormichu.kqrs.command.ValidationFailedCommandEvent
 import com.kormichu.kqrs.event.EventHandler
 import kotlin.reflect.KClass
 
@@ -17,3 +18,4 @@ interface MetricsCommandEventHandler<E : CommandEvent<*>> : EventHandler<E> {
 interface MetricsStartProcessCommandEventHandler : MetricsCommandEventHandler<StartProcessCommandEvent<*>>
 interface MetricsStopProcessCommandEventHandler : MetricsCommandEventHandler<StopProcessCommandEvent<*>>
 interface MetricsErrorProcessCommandEventHandler : MetricsCommandEventHandler<ErrorProcessCommandEvent<*>>
+interface MetricsValidationFailedCommandEventHandler : MetricsCommandEventHandler<ValidationFailedCommandEvent<*>>

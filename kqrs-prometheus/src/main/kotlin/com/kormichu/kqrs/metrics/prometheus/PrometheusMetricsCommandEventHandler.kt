@@ -6,10 +6,12 @@ import com.kormichu.kqrs.command.CommandEvent
 import com.kormichu.kqrs.command.ErrorProcessCommandEvent
 import com.kormichu.kqrs.command.StartProcessCommandEvent
 import com.kormichu.kqrs.command.StopProcessCommandEvent
+import com.kormichu.kqrs.command.ValidationFailedCommandEvent
 import com.kormichu.kqrs.metrics.MetricsCommandEventHandler
 import com.kormichu.kqrs.metrics.MetricsErrorProcessCommandEventHandler
 import com.kormichu.kqrs.metrics.MetricsStartProcessCommandEventHandler
 import com.kormichu.kqrs.metrics.MetricsStopProcessCommandEventHandler
+import com.kormichu.kqrs.metrics.MetricsValidationFailedCommandEventHandler
 import kotlin.collections.plus
 
 interface PrometheusMetricsCommandEventHandler<E : CommandEvent<*>>: MetricsCommandEventHandler<E>
@@ -55,6 +57,18 @@ class PrometheusMetricsErrorCommandEventHandler(
     }
 }
 
+class PrometheusMetricsValidationFailedCommandEventHandler(
+    private val meterRegistry: MeterRegistry
+):  PrometheusMetricsCommandEventHandler<ValidationFailedCommandEvent<*>>,
+    MetricsValidationFailedCommandEventHandler {
+    override suspend fun handle(event: ValidationFailedCommandEvent<*>) {
+        meterRegistry.counter(
+            METRIC_COMMAND_VALIDATION_FAILED_PROCESS,
+            event.toMicrometerTags()
+        ).increment()
+    }
+}
+
 fun CommandEvent<*>.toMicrometerTags(): List<Tag> =
     eventTags.map { Tag.of(it.key, it.value) } +
         listOf(Tag.of("command", commandName.value))
@@ -62,4 +76,5 @@ fun CommandEvent<*>.toMicrometerTags(): List<Tag> =
 private const val METRIC_COMMAND_START_PROCESS = "kqrs_command_start"
 private const val METRIC_COMMAND_STOP_PROCESS = "kqrs_command_stop"
 private const val METRIC_COMMAND_ERROR_PROCESS = "kqrs_command_error"
+private const val METRIC_COMMAND_VALIDATION_FAILED_PROCESS = "kqrs_command_validation_failed"
 private const val METRIC_COMMAND_DURATION = "kqrs_command_duration"

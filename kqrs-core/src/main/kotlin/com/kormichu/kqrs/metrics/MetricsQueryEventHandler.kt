@@ -6,6 +6,7 @@ import com.kormichu.kqrs.query.ErrorProcessQueryEvent
 import com.kormichu.kqrs.query.QueryEvent
 import com.kormichu.kqrs.query.StartProcessQueryEvent
 import com.kormichu.kqrs.query.StopProcessQueryEvent
+import com.kormichu.kqrs.query.ValidationFailedQueryEvent
 import kotlin.reflect.KClass
 
 interface MetricsQueryEventHandler<E : QueryEvent<*>> : EventHandler<E> {
@@ -17,3 +18,4 @@ interface MetricsQueryEventHandler<E : QueryEvent<*>> : EventHandler<E> {
 interface MetricsStartProcessQueryEventHandler : MetricsQueryEventHandler<StartProcessQueryEvent<*>>
 interface MetricsStopProcessQueryEventHandler : MetricsQueryEventHandler<StopProcessQueryEvent<*>>
 interface MetricsErrorProcessQueryEventHandler : MetricsQueryEventHandler<ErrorProcessQueryEvent<*>>
+interface MetricsValidationFailedQueryEventHandler : MetricsQueryEventHandler<ValidationFailedQueryEvent<*>>
