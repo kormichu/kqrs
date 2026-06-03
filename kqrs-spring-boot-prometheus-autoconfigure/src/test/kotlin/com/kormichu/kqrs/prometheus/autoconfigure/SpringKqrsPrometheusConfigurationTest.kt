@@ -9,12 +9,16 @@ import com.kormichu.kqrs.metrics.MetricsStartProcessCommandEventHandler
 import com.kormichu.kqrs.metrics.MetricsStartProcessQueryEventHandler
 import com.kormichu.kqrs.metrics.MetricsStopProcessCommandEventHandler
 import com.kormichu.kqrs.metrics.MetricsStopProcessQueryEventHandler
+import com.kormichu.kqrs.metrics.MetricsValidationFailedCommandEventHandler
+import com.kormichu.kqrs.metrics.MetricsValidationFailedQueryEventHandler
 import com.kormichu.kqrs.metrics.prometheus.PrometheusMetricsErrorCommandEventHandler
 import com.kormichu.kqrs.metrics.prometheus.PrometheusMetricsErrorQueryEventHandler
 import com.kormichu.kqrs.metrics.prometheus.PrometheusMetricsStartCommandEventHandler
 import com.kormichu.kqrs.metrics.prometheus.PrometheusMetricsStartQueryEventHandler
 import com.kormichu.kqrs.metrics.prometheus.PrometheusMetricsStopCommandEventHandler
 import com.kormichu.kqrs.metrics.prometheus.PrometheusMetricsStopQueryEventHandler
+import com.kormichu.kqrs.metrics.prometheus.PrometheusMetricsValidationFailedCommandEventHandler
+import com.kormichu.kqrs.metrics.prometheus.PrometheusMetricsValidationFailedQueryEventHandler
 import com.kormichu.kqrs.spring.boot.autoconfigure.SpringKqrsConfiguration
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
@@ -71,6 +75,18 @@ class SpringKqrsPrometheusConfigurationTest {
             }
     }
 
+    @Test
+    fun `should register MetricsValidationFailedCommandEventHandler bean when enabled and MeterRegistry present`() {
+        contextRunner
+            .withBean(MeterRegistry::class.java, { SimpleMeterRegistry() })
+            .withPropertyValues("kqrs.metrics.prometheus.enabled=true")
+            .run { context ->
+                assertThat(context.getBean<MetricsValidationFailedCommandEventHandler>()).isNotNull()
+                assertThat(context.getBean<MetricsValidationFailedCommandEventHandler>())
+                    .isInstanceOf(PrometheusMetricsValidationFailedCommandEventHandler::class)
+            }
+    }
+
     // endregion
 
     // region Query handlers — enabled
@@ -111,6 +127,18 @@ class SpringKqrsPrometheusConfigurationTest {
             }
     }
 
+    @Test
+    fun `should register MetricsValidationFailedQueryEventHandler bean when enabled and MeterRegistry present`() {
+        contextRunner
+            .withBean(MeterRegistry::class.java, { SimpleMeterRegistry() })
+            .withPropertyValues("kqrs.metrics.prometheus.enabled=true")
+            .run { context ->
+                assertThat(context.getBean<MetricsValidationFailedQueryEventHandler>()).isNotNull()
+                assertThat(context.getBean<MetricsValidationFailedQueryEventHandler>())
+                    .isInstanceOf(PrometheusMetricsValidationFailedQueryEventHandler::class)
+            }
+    }
+
     // endregion
 
     // region Command handlers — disabled / absent
@@ -124,6 +152,7 @@ class SpringKqrsPrometheusConfigurationTest {
                 assert(!context.containsBean("prometheusMetricsStartCommandEventHandler"))
                 assert(!context.containsBean("prometheusMetricsStopCommandEventHandler"))
                 assert(!context.containsBean("prometheusMetricsErrorCommandEventHandler"))
+                assert(!context.containsBean("prometheusMetricsValidationFailedCommandEventHandler"))
             }
     }
 
@@ -135,6 +164,7 @@ class SpringKqrsPrometheusConfigurationTest {
                 assert(!context.containsBean("prometheusMetricsStartCommandEventHandler"))
                 assert(!context.containsBean("prometheusMetricsStopCommandEventHandler"))
                 assert(!context.containsBean("prometheusMetricsErrorCommandEventHandler"))
+                assert(!context.containsBean("prometheusMetricsValidationFailedCommandEventHandler"))
             }
     }
 
@@ -146,6 +176,7 @@ class SpringKqrsPrometheusConfigurationTest {
                 assert(!context.containsBean("prometheusMetricsStartCommandEventHandler"))
                 assert(!context.containsBean("prometheusMetricsStopCommandEventHandler"))
                 assert(!context.containsBean("prometheusMetricsErrorCommandEventHandler"))
+                assert(!context.containsBean("prometheusMetricsValidationFailedCommandEventHandler"))
             }
     }
 
@@ -162,6 +193,7 @@ class SpringKqrsPrometheusConfigurationTest {
                 assert(!context.containsBean("prometheusMetricsStartQueryEventHandler"))
                 assert(!context.containsBean("prometheusMetricsStopQueryEventHandler"))
                 assert(!context.containsBean("prometheusMetricsErrorQueryEventHandler"))
+                assert(!context.containsBean("prometheusMetricsValidationFailedQueryEventHandler"))
             }
     }
 
@@ -173,6 +205,7 @@ class SpringKqrsPrometheusConfigurationTest {
                 assert(!context.containsBean("prometheusMetricsStartQueryEventHandler"))
                 assert(!context.containsBean("prometheusMetricsStopQueryEventHandler"))
                 assert(!context.containsBean("prometheusMetricsErrorQueryEventHandler"))
+                assert(!context.containsBean("prometheusMetricsValidationFailedQueryEventHandler"))
             }
     }
 
@@ -184,6 +217,7 @@ class SpringKqrsPrometheusConfigurationTest {
                 assert(!context.containsBean("prometheusMetricsStartQueryEventHandler"))
                 assert(!context.containsBean("prometheusMetricsStopQueryEventHandler"))
                 assert(!context.containsBean("prometheusMetricsErrorQueryEventHandler"))
+                assert(!context.containsBean("prometheusMetricsValidationFailedQueryEventHandler"))
             }
     }
 
@@ -200,9 +234,11 @@ class SpringKqrsPrometheusConfigurationTest {
                 assert(context.containsBean("prometheusMetricsStartCommandEventHandler"))
                 assert(context.containsBean("prometheusMetricsStopCommandEventHandler"))
                 assert(context.containsBean("prometheusMetricsErrorCommandEventHandler"))
+                assert(context.containsBean("prometheusMetricsValidationFailedCommandEventHandler"))
                 assert(context.containsBean("prometheusMetricsStartQueryEventHandler"))
                 assert(context.containsBean("prometheusMetricsStopQueryEventHandler"))
                 assert(context.containsBean("prometheusMetricsErrorQueryEventHandler"))
+                assert(context.containsBean("prometheusMetricsValidationFailedQueryEventHandler"))
             }
     }
 
