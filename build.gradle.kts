@@ -1,4 +1,4 @@
-import org.gradle.kotlin.dsl.register
+import org.gradle.api.publish.PublishingExtension
 
 plugins {
     alias(libs.plugins.kotlin.jvm)
@@ -46,22 +46,8 @@ subprojects {
         withSourcesJar()
     }
 
-    publishing {
-        repositories {
-            maven {
-                name = "MavenCentral"
-                url = if (project.version.toString().endsWith("-SNAPSHOT")) {
-                    uri("https://central.sonatype.com/repository/maven-snapshots/")
-                } else {
-                    uri("https://central.sonatype.com/repository/maven-releases/")
-                }
-                credentials {
-                    username = System.getenv("OSSRH_USERNAME") ?: project.findProperty("ossrh.username") as String?
-                    password = System.getenv("OSSRH_PASSWORD") ?: project.findProperty("ossrh.password") as String?
-                }
-            }
-        }
 
+    configure<PublishingExtension> {
         publications {
             register<MavenPublication>("mavenJava") {
                 from(components["java"])
@@ -104,7 +90,7 @@ subprojects {
         if (signingKey != null && signingPassword != null) {
             useInMemoryPgpKeys(signingKey, signingPassword)
         }
-        sign(publishing.publications["mavenJava"])
+        sign(the<PublishingExtension>().publications["mavenJava"])
     }
 
     tasks.withType<Sign>().configureEach {
@@ -143,5 +129,6 @@ subprojects {
         testRuntimeOnly(rootProject.libs.junit.platform.launcher)
     }
 }
+
 
 apply(from = rootProject.file("gradle/config/git/install-git-hooks.gradle"))

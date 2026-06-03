@@ -1,3 +1,15 @@
+plugins {
+    id("com.gradleup.nmcp.settings") version "1.5.0"
+}
+
+nmcpSettings {
+    centralPortal {
+        username = System.getenv("OSSRH_USERNAME") ?: settings.extra.properties["ossrh.username"] as String? ?: ""
+        password = System.getenv("OSSRH_PASSWORD") ?: settings.extra.properties["ossrh.password"] as String? ?: ""
+        publishingType = "AUTOMATIC"
+    }
+}
+
 rootProject.name = "kqrs"
 
 include("kqrs-core")

@@ -42,7 +42,7 @@ jobs:
         run: ./gradlew clean build --no-daemon -Prelease.forceVersion=${{ steps.version.outputs.VERSION }}
 
       - name: Publish Snapshot to Maven Central
-        run: ./gradlew publishMavenJavaPublicationToMavenCentralRepository --no-daemon -Prelease.forceVersion=${{ steps.version.outputs.VERSION }}
+        run: ./gradlew publishAggregationToCentralSnapshots --no-daemon -Prelease.forceVersion=${{ steps.version.outputs.VERSION }}
         env:
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
