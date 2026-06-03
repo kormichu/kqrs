@@ -51,9 +51,9 @@ subprojects {
             maven {
                 name = "MavenCentral"
                 url = if (project.version.toString().endsWith("-SNAPSHOT")) {
-                    uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
+                    uri("https://central.sonatype.com/repository/maven-snapshots/")
                 } else {
-                    uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+                    uri("https://central.sonatype.com/repository/maven-releases/")
                 }
                 credentials {
                     username = System.getenv("OSSRH_USERNAME") ?: project.findProperty("ossrh.username") as String?
