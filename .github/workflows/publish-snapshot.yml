@@ -36,7 +36,7 @@ jobs:
       - name: Resolve snapshot version
         id: version
         run: |
-          echo "VERSION=$(./gradlew currentVersion -q --no-daemon | grep -oP '^\d+\.\d+\.\d+')-SNAPSHOT" >> $GITHUB_OUTPUT
+          echo "VERSION=$(./gradlew currentVersion -q --no-daemon | grep -oP '\d+\.\d+\.\d+' | head -1 | tr '_' '-')-SNAPSHOT" >> $GITHUB_OUTPUT
 
       - name: Build with Gradle
         run: ./gradlew clean build --no-daemon -Prelease.forceVersion=${{ steps.version.outputs.VERSION }}
