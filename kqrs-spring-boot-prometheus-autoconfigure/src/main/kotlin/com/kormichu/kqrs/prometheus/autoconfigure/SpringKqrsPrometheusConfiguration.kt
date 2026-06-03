@@ -7,12 +7,16 @@ import com.kormichu.kqrs.metrics.MetricsStartProcessCommandEventHandler
 import com.kormichu.kqrs.metrics.MetricsStartProcessQueryEventHandler
 import com.kormichu.kqrs.metrics.MetricsStopProcessCommandEventHandler
 import com.kormichu.kqrs.metrics.MetricsStopProcessQueryEventHandler
+import com.kormichu.kqrs.metrics.MetricsValidationFailedCommandEventHandler
+import com.kormichu.kqrs.metrics.MetricsValidationFailedQueryEventHandler
 import com.kormichu.kqrs.metrics.prometheus.PrometheusMetricsErrorCommandEventHandler
 import com.kormichu.kqrs.metrics.prometheus.PrometheusMetricsErrorQueryEventHandler
 import com.kormichu.kqrs.metrics.prometheus.PrometheusMetricsStartCommandEventHandler
 import com.kormichu.kqrs.metrics.prometheus.PrometheusMetricsStartQueryEventHandler
 import com.kormichu.kqrs.metrics.prometheus.PrometheusMetricsStopCommandEventHandler
 import com.kormichu.kqrs.metrics.prometheus.PrometheusMetricsStopQueryEventHandler
+import com.kormichu.kqrs.metrics.prometheus.PrometheusMetricsValidationFailedCommandEventHandler
+import com.kormichu.kqrs.metrics.prometheus.PrometheusMetricsValidationFailedQueryEventHandler
 import com.kormichu.kqrs.spring.boot.autoconfigure.SpringKqrsProperties
 import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.boot.autoconfigure.AutoConfiguration
@@ -58,6 +62,15 @@ class SpringKqrsPrometheusConfiguration {
 
     @Bean
     @ConditionalOnProperty("kqrs.metrics.prometheus.enabled")
+    fun prometheusMetricsValidationFailedCommandEventHandler(
+        meterRegistry: MeterRegistry
+    ): MetricsValidationFailedCommandEventHandler {
+        logger.debug("Using PrometheusMetricsValidationFailedCommandEventHandler")
+        return PrometheusMetricsValidationFailedCommandEventHandler(meterRegistry)
+    }
+
+    @Bean
+    @ConditionalOnProperty("kqrs.metrics.prometheus.enabled")
     fun prometheusMetricsStartQueryEventHandler(
         meterRegistry: MeterRegistry
     ): MetricsStartProcessQueryEventHandler {
@@ -81,5 +94,14 @@ class SpringKqrsPrometheusConfiguration {
     ): MetricsErrorProcessQueryEventHandler {
         logger.debug("Using PrometheusMetricsErrorQueryEventHandler")
         return PrometheusMetricsErrorQueryEventHandler(meterRegistry)
+    }
+
+    @Bean
+    @ConditionalOnProperty("kqrs.metrics.prometheus.enabled")
+    fun prometheusMetricsValidationFailedQueryEventHandler(
+        meterRegistry: MeterRegistry
+    ): MetricsValidationFailedQueryEventHandler {
+        logger.debug("Using PrometheusMetricsValidationFailedQueryEventHandler")
+        return PrometheusMetricsValidationFailedQueryEventHandler(meterRegistry)
     }
 }

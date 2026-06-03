@@ -8,6 +8,8 @@ import com.kormichu.kqrs.query.ErrorProcessQueryEvent
 import com.kormichu.kqrs.query.QueryName
 import com.kormichu.kqrs.query.StartProcessQueryEvent
 import com.kormichu.kqrs.query.StopProcessQueryEvent
+import com.kormichu.kqrs.query.ValidationFailedQueryEvent
+import com.kormichu.kqrs.query.ValidationQueryHandlerException
 import io.micrometer.core.instrument.Tag
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import kotlinx.coroutines.test.runTest
@@ -191,6 +193,78 @@ class PrometheusMetricsQueryEventHandlerTest {
                 .counter()
             assertThat(counter).isNotNull()
             assertThat(counter!!.count()).isEqualTo(1.0)
+        }
+    }
+
+    @Nested
+    inner class ValidationFailedQueryEventHandlerTest {
+
+        @Test
+        fun `should increment validation failed counter`() = runTest {
+            // given
+            val handler = PrometheusMetricsValidationFailedQueryEventHandler(meterRegistry)
+            val event = ValidationFailedQueryEvent(
+                queryName = QueryName("test.query"),
+                eventTags = emptyList(),
+                startProcessingAt = Instant.now().minusMillis(100),
+                exception = object : ValidationQueryHandlerException("validation error") {}
+            )
+
+            // when
+            handler.handle(event)
+
+            // then
+            val counter = meterRegistry.find("kqrs_query_validation_failed")
+                .tag("query", "test.query")
+                .counter()
+            assertThat(counter).isNotNull()
+            assertThat(counter!!.count()).isEqualTo(1.0)
+        }
+
+        @Test
+        fun `should include event tags`() = runTest {
+            // given
+            val handler = PrometheusMetricsValidationFailedQueryEventHandler(meterRegistry)
+            val event = ValidationFailedQueryEvent(
+                queryName = QueryName("test.query"),
+                eventTags = listOf(EventTag("user.id", "abc-123")),
+                startProcessingAt = Instant.now().minusMillis(100),
+                exception = object : ValidationQueryHandlerException("validation error") {}
+            )
+
+            // when
+            handler.handle(event)
+
+            // then
+            val counter = meterRegistry.find("kqrs_query_validation_failed")
+                .tag("query", "test.query")
+                .tag("user.id", "abc-123")
+                .counter()
+            assertThat(counter).isNotNull()
+            assertThat(counter!!.count()).isEqualTo(1.0)
+        }
+
+        @Test
+        fun `should increment counter on multiple invocations`() = runTest {
+            // given
+            val handler = PrometheusMetricsValidationFailedQueryEventHandler(meterRegistry)
+            val event = ValidationFailedQueryEvent(
+                queryName = QueryName("test.query"),
+                eventTags = emptyList(),
+                startProcessingAt = Instant.now().minusMillis(100),
+                exception = object : ValidationQueryHandlerException("validation error") {}
+            )
+
+            // when
+            handler.handle(event)
+            handler.handle(event)
+
+            // then
+            val counter = meterRegistry.find("kqrs_query_validation_failed")
+                .tag("query", "test.query")
+                .counter()
+            assertThat(counter).isNotNull()
+            assertThat(counter!!.count()).isEqualTo(2.0)
         }
     }
 

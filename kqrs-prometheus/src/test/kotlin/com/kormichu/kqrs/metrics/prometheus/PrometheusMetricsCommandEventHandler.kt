@@ -7,6 +7,8 @@ import com.kormichu.kqrs.command.CommandName
 import com.kormichu.kqrs.command.ErrorProcessCommandEvent
 import com.kormichu.kqrs.command.StartProcessCommandEvent
 import com.kormichu.kqrs.command.StopProcessCommandEvent
+import com.kormichu.kqrs.command.ValidationCommandHandlerException
+import com.kormichu.kqrs.command.ValidationFailedCommandEvent
 import com.kormichu.kqrs.event.EventTag
 import io.micrometer.core.instrument.Tag
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
@@ -190,6 +192,78 @@ class PrometheusMetricsCommandEventHandlerTest {
                 .counter()
             assertThat(counter).isNotNull()
             assertThat(counter!!.count()).isEqualTo(1.0)
+        }
+    }
+
+    @Nested
+    inner class ValidationFailedCommandEventHandlerTest {
+
+        @Test
+        fun `should increment validation failed counter`() = runTest {
+            // given
+            val handler = PrometheusMetricsValidationFailedCommandEventHandler(meterRegistry)
+            val event = ValidationFailedCommandEvent(
+                commandName = CommandName("test.command"),
+                eventTags = emptyList(),
+                startProcessingAt = Instant.now().minusMillis(100),
+                exception = object : ValidationCommandHandlerException("validation error") {}
+            )
+
+            // when
+            handler.handle(event)
+
+            // then
+            val counter = meterRegistry.find("kqrs_command_validation_failed")
+                .tag("command", "test.command")
+                .counter()
+            assertThat(counter).isNotNull()
+            assertThat(counter!!.count()).isEqualTo(1.0)
+        }
+
+        @Test
+        fun `should include event tags`() = runTest {
+            // given
+            val handler = PrometheusMetricsValidationFailedCommandEventHandler(meterRegistry)
+            val event = ValidationFailedCommandEvent(
+                commandName = CommandName("test.command"),
+                eventTags = listOf(EventTag("user.email", "test@example.com")),
+                startProcessingAt = Instant.now().minusMillis(100),
+                exception = object : ValidationCommandHandlerException("validation error") {}
+            )
+
+            // when
+            handler.handle(event)
+
+            // then
+            val counter = meterRegistry.find("kqrs_command_validation_failed")
+                .tag("command", "test.command")
+                .tag("user.email", "test@example.com")
+                .counter()
+            assertThat(counter).isNotNull()
+            assertThat(counter!!.count()).isEqualTo(1.0)
+        }
+
+        @Test
+        fun `should increment counter on multiple invocations`() = runTest {
+            // given
+            val handler = PrometheusMetricsValidationFailedCommandEventHandler(meterRegistry)
+            val event = ValidationFailedCommandEvent(
+                commandName = CommandName("test.command"),
+                eventTags = emptyList(),
+                startProcessingAt = Instant.now().minusMillis(100),
+                exception = object : ValidationCommandHandlerException("validation error") {}
+            )
+
+            // when
+            handler.handle(event)
+            handler.handle(event)
+
+            // then
+            val counter = meterRegistry.find("kqrs_command_validation_failed")
+                .tag("command", "test.command")
+                .counter()
+            assertThat(counter).isNotNull()
+            assertThat(counter!!.count()).isEqualTo(2.0)
         }
     }
 
