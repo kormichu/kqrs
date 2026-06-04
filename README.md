@@ -142,17 +142,11 @@ When one or more middleware beans are registered, auto-configuration switches fr
 class KqrsMiddlewareConfiguration {
     @Bean
     @Order(10)
-    fun commandTracingMiddleware() = TracingCommandMiddleware(
-        onStart = { ctx -> logger.info("start command {}", ctx.command.commandId) },
-        onError = { ctx, ex -> logger.error("failed command {}", ctx.command.commandId, ex) },
-    )
+    fun commandTracingMiddleware() = TracingCommandMiddleware()
 
     @Bean
     @Order(20)
-    fun queryRetryMiddleware() = RetryQueryMiddleware(
-        maxAttempts = 3,
-        shouldRetry = { it is java.io.IOException }
-    )
+    fun queryRetryMiddleware() = RetryQueryMiddleware(maxAttempts = 3)
 }
 ```
 

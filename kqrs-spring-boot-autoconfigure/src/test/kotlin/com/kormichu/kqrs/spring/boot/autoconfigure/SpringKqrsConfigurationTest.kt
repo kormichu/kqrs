@@ -124,7 +124,12 @@ class SpringKqrsConfigurationTest {
     fun `should use middleware command executor when command middleware exists`() {
         contextRunner
             .withBean(CommandMiddleware::class.java, {
-                CommandMiddleware { _, next -> next() }
+                object : CommandMiddleware {
+                    override fun <C : com.kormichu.kqrs.command.Command<R>, R> intercept(
+                        context: com.kormichu.kqrs.command.CommandExecutionContext<C, R>,
+                        next: () -> R,
+                    ): R = next()
+                }
             })
             .run { context ->
                 assertThat(context.getBean<CommandExecutor>()).isNotNull()
@@ -136,7 +141,12 @@ class SpringKqrsConfigurationTest {
     fun `should use middleware async command executor when async command middleware exists`() {
         contextRunner
             .withBean(AsyncCommandMiddleware::class.java, {
-                AsyncCommandMiddleware { _, next -> next() }
+                object : AsyncCommandMiddleware {
+                    override suspend fun <C : com.kormichu.kqrs.command.Command<R>, R> intercept(
+                        context: com.kormichu.kqrs.command.AsyncCommandExecutionContext<C, R>,
+                        next: suspend () -> R,
+                    ): R = next()
+                }
             })
             .run { context ->
                 assertThat(context.getBean<AsyncCommandExecutor>()).isNotNull()
@@ -213,7 +223,12 @@ class SpringKqrsConfigurationTest {
     fun `should use middleware query executor when query middleware exists`() {
         contextRunner
             .withBean(QueryMiddleware::class.java, {
-                QueryMiddleware { _, next -> next() }
+                object : QueryMiddleware {
+                    override fun <Q : com.kormichu.kqrs.query.Query<R>, R> intercept(
+                        context: com.kormichu.kqrs.query.QueryExecutionContext<Q, R>,
+                        next: () -> R,
+                    ): R = next()
+                }
             })
             .run { context ->
                 assertThat(context.getBean<QueryExecutor>()).isNotNull()
@@ -225,7 +240,12 @@ class SpringKqrsConfigurationTest {
     fun `should use middleware async query executor when async query middleware exists`() {
         contextRunner
             .withBean(AsyncQueryMiddleware::class.java, {
-                AsyncQueryMiddleware { _, next -> next() }
+                object : AsyncQueryMiddleware {
+                    override suspend fun <Q : com.kormichu.kqrs.query.Query<R>, R> intercept(
+                        context: com.kormichu.kqrs.query.AsyncQueryExecutionContext<Q, R>,
+                        next: suspend () -> R,
+                    ): R = next()
+                }
             })
             .run { context ->
                 assertThat(context.getBean<AsyncQueryExecutor>()).isNotNull()

@@ -2,16 +2,18 @@ package com.kormichu.kqrs.command
 
 import kotlin.time.Duration
 
+private const val DEFAULT_COMMAND_RETRY_ATTEMPTS = 1
+
 data class CommandExecutionContext<C : Command<R>, R>(
     val command: C,
     val handler: CommandHandler<C, R>,
 )
 
-fun interface CommandMiddleware {
+interface CommandMiddleware {
     fun <C : Command<R>, R> intercept(context: CommandExecutionContext<C, R>, next: () -> R): R
 }
 
-fun interface AsyncCommandMiddleware {
+interface AsyncCommandMiddleware {
     suspend fun <C : Command<R>, R> intercept(
         context: AsyncCommandExecutionContext<C, R>,
         next: suspend () -> R,
@@ -24,7 +26,7 @@ data class AsyncCommandExecutionContext<C : Command<R>, R>(
 )
 
 class RetryCommandMiddleware(
-    private val maxAttempts: Int = 1,
+    private val maxAttempts: Int = DEFAULT_COMMAND_RETRY_ATTEMPTS,
     private val delayBetweenAttempts: Duration = Duration.ZERO,
     private val shouldRetry: (Throwable) -> Boolean = { true },
 ) : CommandMiddleware {
@@ -51,7 +53,7 @@ class RetryCommandMiddleware(
 }
 
 class RetryAsyncCommandMiddleware(
-    private val maxAttempts: Int = 1,
+    private val maxAttempts: Int = DEFAULT_COMMAND_RETRY_ATTEMPTS,
     private val delayBetweenAttempts: Duration = Duration.ZERO,
     private val shouldRetry: (Throwable) -> Boolean = { true },
 ) : AsyncCommandMiddleware {

@@ -25,13 +25,17 @@ class MiddlewareCommandExecutorTest {
             "ok"
         }
 
-        val first = CommandMiddleware { _, next ->
-            invocationOrder += "first-before"
-            next().also { invocationOrder += "first-after" }
+        val first = object : CommandMiddleware {
+            override fun <C : Command<R>, R> intercept(context: CommandExecutionContext<C, R>, next: () -> R): R {
+                invocationOrder += "first-before"
+                return next().also { invocationOrder += "first-after" }
+            }
         }
-        val second = CommandMiddleware { _, next ->
-            invocationOrder += "second-before"
-            next().also { invocationOrder += "second-after" }
+        val second = object : CommandMiddleware {
+            override fun <C : Command<R>, R> intercept(context: CommandExecutionContext<C, R>, next: () -> R): R {
+                invocationOrder += "second-before"
+                return next().also { invocationOrder += "second-after" }
+            }
         }
 
         val executor = MiddlewareCommandExecutor(listOf(first, second))
@@ -52,7 +56,12 @@ class MiddlewareCommandExecutorTest {
     fun `should allow short-circuiting command middleware`() {
         val command = TestCommand("value")
         val handler = mockk<CommandHandler<TestCommand, String>>()
-        val shortCircuit = CommandMiddleware { _, _ -> "short-circuited" }
+        val shortCircuit = object : CommandMiddleware {
+            override fun <C : Command<R>, R> intercept(context: CommandExecutionContext<C, R>, next: () -> R): R {
+                @Suppress("UNCHECKED_CAST")
+                return "short-circuited" as R
+            }
+        }
 
         val executor = MiddlewareCommandExecutor(listOf(shortCircuit))
 

@@ -2,16 +2,18 @@ package com.kormichu.kqrs.query
 
 import kotlin.time.Duration
 
+private const val DEFAULT_QUERY_RETRY_ATTEMPTS = 3
+
 data class QueryExecutionContext<Q : Query<R>, R>(
     val query: Q,
     val handler: QueryHandler<Q, R>,
 )
 
-fun interface QueryMiddleware {
+interface QueryMiddleware {
     fun <Q : Query<R>, R> intercept(context: QueryExecutionContext<Q, R>, next: () -> R): R
 }
 
-fun interface AsyncQueryMiddleware {
+interface AsyncQueryMiddleware {
     suspend fun <Q : Query<R>, R> intercept(
         context: AsyncQueryExecutionContext<Q, R>,
         next: suspend () -> R,
@@ -24,7 +26,7 @@ data class AsyncQueryExecutionContext<Q : Query<R>, R>(
 )
 
 class RetryQueryMiddleware(
-    private val maxAttempts: Int = 3,
+    private val maxAttempts: Int = DEFAULT_QUERY_RETRY_ATTEMPTS,
     private val delayBetweenAttempts: Duration = Duration.ZERO,
     private val shouldRetry: (Throwable) -> Boolean = { true },
 ) : QueryMiddleware {
@@ -51,7 +53,7 @@ class RetryQueryMiddleware(
 }
 
 class RetryAsyncQueryMiddleware(
-    private val maxAttempts: Int = 3,
+    private val maxAttempts: Int = DEFAULT_QUERY_RETRY_ATTEMPTS,
     private val delayBetweenAttempts: Duration = Duration.ZERO,
     private val shouldRetry: (Throwable) -> Boolean = { true },
 ) : AsyncQueryMiddleware {

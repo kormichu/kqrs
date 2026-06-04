@@ -25,13 +25,17 @@ class MiddlewareQueryExecutorTest {
             "ok"
         }
 
-        val first = QueryMiddleware { _, next ->
-            invocationOrder += "first-before"
-            next().also { invocationOrder += "first-after" }
+        val first = object : QueryMiddleware {
+            override fun <Q : Query<R>, R> intercept(context: QueryExecutionContext<Q, R>, next: () -> R): R {
+                invocationOrder += "first-before"
+                return next().also { invocationOrder += "first-after" }
+            }
         }
-        val second = QueryMiddleware { _, next ->
-            invocationOrder += "second-before"
-            next().also { invocationOrder += "second-after" }
+        val second = object : QueryMiddleware {
+            override fun <Q : Query<R>, R> intercept(context: QueryExecutionContext<Q, R>, next: () -> R): R {
+                invocationOrder += "second-before"
+                return next().also { invocationOrder += "second-after" }
+            }
         }
 
         val executor = MiddlewareQueryExecutor(listOf(first, second))
@@ -52,7 +56,12 @@ class MiddlewareQueryExecutorTest {
     fun `should allow short-circuiting query middleware`() {
         val query = TestQuery("value")
         val handler = mockk<QueryHandler<TestQuery, String>>()
-        val shortCircuit = QueryMiddleware { _, _ -> "short-circuited" }
+        val shortCircuit = object : QueryMiddleware {
+            override fun <Q : Query<R>, R> intercept(context: QueryExecutionContext<Q, R>, next: () -> R): R {
+                @Suppress("UNCHECKED_CAST")
+                return "short-circuited" as R
+            }
+        }
 
         val executor = MiddlewareQueryExecutor(listOf(shortCircuit))
 
