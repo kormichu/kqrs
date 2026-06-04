@@ -8,13 +8,17 @@ import com.kormichu.kqrs.KqrsGateway
 import com.kormichu.kqrs.command.AsyncCommandBus
 import com.kormichu.kqrs.command.AsyncCommandExecutor
 import com.kormichu.kqrs.command.AsyncCommandHandlerStorage
+import com.kormichu.kqrs.command.AsyncCommandMiddleware
 import com.kormichu.kqrs.command.CommandBus
 import com.kormichu.kqrs.command.CommandExecutor
 import com.kormichu.kqrs.command.CommandHandlerStorage
+import com.kormichu.kqrs.command.CommandMiddleware
 import com.kormichu.kqrs.command.DefaultAsyncCommandBus
 import com.kormichu.kqrs.command.DefaultAsyncCommandExecutor
 import com.kormichu.kqrs.command.DefaultCommandBus
 import com.kormichu.kqrs.command.DefaultCommandExecutor
+import com.kormichu.kqrs.command.MiddlewareAsyncCommandExecutor
+import com.kormichu.kqrs.command.MiddlewareCommandExecutor
 import com.kormichu.kqrs.event.DefaultEventBus
 import com.kormichu.kqrs.event.DefaultEventExecutor
 import com.kormichu.kqrs.event.EventBus
@@ -24,13 +28,17 @@ import com.kormichu.kqrs.event.EventPublisher
 import com.kormichu.kqrs.query.AsyncQueryBus
 import com.kormichu.kqrs.query.AsyncQueryExecutor
 import com.kormichu.kqrs.query.AsyncQueryHandlerStorage
+import com.kormichu.kqrs.query.AsyncQueryMiddleware
 import com.kormichu.kqrs.query.DefaultAsyncQueryBus
 import com.kormichu.kqrs.query.DefaultAsyncQueryExecutor
 import com.kormichu.kqrs.query.DefaultQueryBus
 import com.kormichu.kqrs.query.DefaultQueryExecutor
+import com.kormichu.kqrs.query.MiddlewareAsyncQueryExecutor
+import com.kormichu.kqrs.query.MiddlewareQueryExecutor
 import com.kormichu.kqrs.query.QueryBus
 import com.kormichu.kqrs.query.QueryExecutor
 import com.kormichu.kqrs.query.QueryHandlerStorage
+import com.kormichu.kqrs.query.QueryMiddleware
 import com.kormichu.kqrs.spring.event.SpringEventHandlerStorage
 import com.kormichu.kqrs.spring.event.SpringEventListener
 import com.kormichu.kqrs.spring.event.SpringEventPublisher
@@ -113,6 +121,30 @@ class SpringKqrsConfigurationTest {
     }
 
     @Test
+    fun `should use middleware command executor when command middleware exists`() {
+        contextRunner
+            .withBean(CommandMiddleware::class.java, {
+                CommandMiddleware { _, next -> next() }
+            })
+            .run { context ->
+                assertThat(context.getBean<CommandExecutor>()).isNotNull()
+                assertThat(context.getBean<MiddlewareCommandExecutor>()).isNotNull()
+            }
+    }
+
+    @Test
+    fun `should use middleware async command executor when async command middleware exists`() {
+        contextRunner
+            .withBean(AsyncCommandMiddleware::class.java, {
+                AsyncCommandMiddleware { _, next -> next() }
+            })
+            .run { context ->
+                assertThat(context.getBean<AsyncCommandExecutor>()).isNotNull()
+                assertThat(context.getBean<MiddlewareAsyncCommandExecutor>()).isNotNull()
+            }
+    }
+
+    @Test
     fun `should allow custom CommandBus override`() {
         val customBus = object : CommandBus {
             override fun <C : com.kormichu.kqrs.command.Command<R>, R> dispatch(command: C): R =
@@ -175,6 +207,30 @@ class SpringKqrsConfigurationTest {
             assertThat(context.getBean<AsyncQueryBus>()).isNotNull()
             assertThat(context.getBean<DefaultAsyncQueryBus>()).isNotNull()
         }
+    }
+
+    @Test
+    fun `should use middleware query executor when query middleware exists`() {
+        contextRunner
+            .withBean(QueryMiddleware::class.java, {
+                QueryMiddleware { _, next -> next() }
+            })
+            .run { context ->
+                assertThat(context.getBean<QueryExecutor>()).isNotNull()
+                assertThat(context.getBean<MiddlewareQueryExecutor>()).isNotNull()
+            }
+    }
+
+    @Test
+    fun `should use middleware async query executor when async query middleware exists`() {
+        contextRunner
+            .withBean(AsyncQueryMiddleware::class.java, {
+                AsyncQueryMiddleware { _, next -> next() }
+            })
+            .run { context ->
+                assertThat(context.getBean<AsyncQueryExecutor>()).isNotNull()
+                assertThat(context.getBean<MiddlewareAsyncQueryExecutor>()).isNotNull()
+            }
     }
 
     // endregion
@@ -255,4 +311,3 @@ class SpringKqrsConfigurationTest {
 
     // endregion
 }
-

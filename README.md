@@ -5,6 +5,7 @@ A Kotlin CQRS (Command Query Responsibility Segregation) library for Spring Boot
 ## Features
 
 - Command and Query handling with automatic routing to handlers
+- Middleware pipeline for command/query execution (sync + coroutine async)
 - Event system with aggregate events and lifecycle events
 - Separate `EventPublisher` (Spring `ApplicationEventPublisher` bridge) and `EventBus` (direct handler dispatch)
 - Synchronous, asynchronous (coroutines), and reactive (Reactor) execution modes
@@ -130,6 +131,46 @@ class UserController(private val kqrsGateway: KqrsGateway) {
         kqrsGateway.query(GetUserByIdQuery(UserId(id))).toResponse()
 }
 ```
+
+### Middleware (Tracing, Retry, etc.)
+
+`CommandExecutor`, `QueryExecutor`, `AsyncCommandExecutor`, and `AsyncQueryExecutor` now support middleware pipelines.
+When one or more middleware beans are registered, auto-configuration switches from default executors to middleware-aware executors.
+
+```kotlin
+@Configuration
+class KqrsMiddlewareConfiguration {
+    @Bean
+    @Order(10)
+    fun commandTracingMiddleware() = TracingCommandMiddleware(
+        onStart = { ctx -> logger.info("start command {}", ctx.command.commandId) },
+        onError = { ctx, ex -> logger.error("failed command {}", ctx.command.commandId, ex) },
+    )
+
+    @Bean
+    @Order(20)
+    fun queryRetryMiddleware() = RetryQueryMiddleware(
+        maxAttempts = 3,
+        shouldRetry = { it is java.io.IOException }
+    )
+}
+```
+
+Ordering is controlled by Spring bean ordering (`@Order` / `Ordered`).
+Middleware can short-circuit execution (skip handler invocation) or wrap handler execution.
+
+Built-in middleware:
+- Tracing: `TracingCommandMiddleware`, `TracingQueryMiddleware`, async variants
+- Retry: `RetryCommandMiddleware`, `RetryQueryMiddleware`, async variants
+
+Retry safety guidance:
+- Commands are often non-idempotent, so command retry defaults to `maxAttempts = 1` (disabled by default).
+- Queries are usually read-only and default to `maxAttempts = 3`.
+- For commands, enable retries only when the command is guaranteed idempotent.
+
+Lifecycle event interaction:
+- Middleware wraps handler execution only.
+- Gateway lifecycle events (`StartProcess*`, `StopProcess*`, `ErrorProcess*`, `ValidationFailed*`) remain unchanged and continue to be published by gateway context handling.
 
 ### Async (Coroutines)
 
