@@ -114,7 +114,7 @@ subprojects {
 
     kotlin {
         compilerOptions {
-            freeCompilerArgs.addAll("-Xjsr305=strict", "-jvm-default=all")
+            freeCompilerArgs.addAll("-Xjsr305=strict")
         }
         sourceSets["main"].apply {
             kotlin.srcDirs("src/main/kotlin")
