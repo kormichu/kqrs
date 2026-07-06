@@ -1,5 +1,5 @@
 plugins {
-    id("com.gradleup.nmcp.settings") version "1.5.0"
+    id("com.gradleup.nmcp.settings") version "1.6.0"
 }
 
 nmcpSettings {
