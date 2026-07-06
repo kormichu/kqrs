@@ -22,8 +22,8 @@ scmVersion {
 }
 
 allprojects {
-    plugins.apply("kotlin")
-    plugins.apply("kotlin-spring")
+    plugins.apply("org.jetbrains.kotlin.jvm")
+    plugins.apply("org.jetbrains.kotlin.plugin.spring")
     plugins.apply("idea")
     plugins.apply("pl.allegro.tech.build.axion-release")
 
