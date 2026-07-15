@@ -1,5 +1,5 @@
 [versions]
-kotlin = "2.4.0"
+kotlin = "2.4.10"
 java = "21"
 axionReleasePlugin = "1.21.2"
 springBoot = "4.1.0"
@@ -11,7 +11,7 @@ reactor = "3.8.6"
 slf4j = "2.0.18"
 kotlinxCoroutines = "1.11.0"
 uuidCreator = "6.1.1"
-junit = "6.1.1"
+junit = "6.1.2"
 micrometer = "1.17.0"
 
 [libraries]
