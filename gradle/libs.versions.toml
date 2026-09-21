@@ -1,7 +1,7 @@
 [versions]
-kotlin = "2.4.10"
+kotlin = "2.4.20"
 java = "21"
-axionReleasePlugin = "1.21.3"
+axionReleasePlugin = "1.21.4"
 springBoot = "4.1.1"
 springDependency = "1.1.7"
 assertk = "0.28.1"
